@@ -1,0 +1,106 @@
+cabal-version: 3.0
+
+name:
+  vector-quicksort
+version:
+  0.1
+synopsis:
+  TODO
+description:
+  TODO
+copyright:
+  (c) Sergey Vinokurov 2022
+license:
+  Apache-2.0
+-- license-file:
+--   LICENSE
+author:
+  Sergey Vinokurov
+maintainer:
+  Sergey Vinokurov <serg.foo@gmail.com>
+
+build-type:
+  Simple
+
+extra-source-files:
+  Changelog.md
+  Readme.md
+
+homepage:
+  https://github.com/sergv/vector-quicksort
+
+source-repository head
+  type: git
+  location: https://github.com/sergv/vector-quicksort.git
+
+common ghc-options
+  default-language:
+    GHC2021
+
+  default-extensions:
+    ImportQualifiedPost
+    LambdaCase
+
+  ghc-options:
+    -O2
+    -Weverything
+    -Wno-all-missed-specialisations
+    -Wno-implicit-prelude
+    -Wno-missed-specialisations
+    -Wno-missing-import-lists
+    -Wno-missing-local-signatures
+    -Wno-missing-safe-haskell-mode
+    -Wno-safe
+    -Wno-type-defaults
+    -Wno-unsafe
+    -Wno-unused-packages
+
+  if impl(ghc >= 8.8)
+    ghc-options:
+      -Wno-missing-deriving-strategies
+
+  if impl(ghc >= 9.2)
+    ghc-options:
+      -Wno-missing-kind-signatures
+
+library
+  import: ghc-options
+  exposed-modules:
+    Data.Vector.Algorithms.FixedSort
+    Data.Vector.Algorithms.Heapsort
+    Data.Vector.Algorithms.Quicksort
+    Data.Vector.Algorithms.Quicksort.Fork
+    Data.Vector.Algorithms.Quicksort.Median
+  hs-source-dirs:
+    src
+  build-depends:
+    , async > 2
+    , atomic-counter
+    , base >= 4.14
+    , parallel
+    , primitive
+    , stm
+    , vector
+
+test-suite test
+  import: ghc-options
+  type:
+    exitcode-stdio-1.0
+  main-is:
+    test/TestMain.hs
+  other-modules:
+    Data.Vector.Algorithms.Quicksort.Tests
+  hs-source-dirs:
+    .
+    test
+  build-depends:
+    , base >= 4.14
+    , tasty
+    , tasty-quickcheck
+    , vector
+    , vector-quicksort
+  ghc-options:
+    -rtsopts
+    -threaded
+    "-with-rtsopts=-N -A32M"
+    -main-is TestMain

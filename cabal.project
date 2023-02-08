@@ -1,0 +1,4 @@
+packages:
+  vector-quicksort.cabal
+
+tests: True
