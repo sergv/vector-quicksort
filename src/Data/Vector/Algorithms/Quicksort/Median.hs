@@ -7,6 +7,7 @@
 ----------------------------------------------------------------------------
 
 {-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE UndecidableInstances   #-}
 
 module Data.Vector.Algorithms.Quicksort.Median
   ( Median(..)
@@ -26,8 +27,10 @@ import Data.Vector.Generic.Mutable qualified as GM
 -- import Data.Int
 -- import Data.Word
 
-class Median a b | a -> b where
-  selectMedian :: (PrimMonad m, GM.MVector v b, Ord b) => a -> v (PrimState m) b -> m b
+-- | Instance can be declared for specific monad. This is useful if we want
+-- to select median at random and need to thread random gen.
+class Median (a :: Type) (b :: Type) (m :: Type -> Type) (s :: Type) | a -> b, m -> s where
+  selectMedian :: (GM.MVector v b, Ord b) => a -> v s b -> m b
 
 data Median3 a = Median3
 
@@ -102,14 +105,13 @@ sort3 a b c =
       -- a <= b <= c
       (a, b, c)
 
-
-instance Median (Median3 a) a where
+instance (PrimMonad m, s ~ PrimState m) => Median (Median3 a) a m s where
   {-# INLINE selectMedian #-}
   selectMedian
-    :: forall (m :: Type -> Type) (v :: Type -> Type -> Type).
-       (PrimMonad m, GM.MVector v a, Ord a)
+    :: forall (v :: Type -> Type -> Type).
+       (GM.MVector v a, Ord a)
     => Median3 a
-    -> v (PrimState m) a
+    -> v s a
     -> m a
   selectMedian _ v = do
     let len :: Int
@@ -127,13 +129,13 @@ instance Median (Median3 a) a where
     pure $! pick3 pv0 pv1 pv2
 
 
-instance Median (Median3or5 a) a where
+instance (PrimMonad m, s ~ PrimState m) => Median (Median3or5 a) a m s where
   {-# INLINE selectMedian #-}
   selectMedian
-    :: forall (m :: Type -> Type) (v :: Type -> Type -> Type).
-       (PrimMonad m, GM.MVector v a, Ord a)
+    :: forall (v :: Type -> Type -> Type).
+       (GM.MVector v a, Ord a)
     => Median3or5 a
-    -> v (PrimState m) a
+    -> v s a
     -> m a
   selectMedian _ v = do
     let len :: Int

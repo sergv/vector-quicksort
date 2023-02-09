@@ -24,7 +24,7 @@ import Data.Vector.Algorithms.Quicksort.Median
 {-# INLINABLE sort #-}
 sort
   :: forall p med x m a v.
-     (Fork p x m, Median med a, PrimMonad m, Ord a, GM.MVector v a)
+     (Fork p x m, Median med a m (PrimState m), PrimMonad m, Ord a, GM.MVector v a)
   => p
   -> med
   -> v (PrimState m) a
