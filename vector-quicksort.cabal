@@ -188,7 +188,7 @@ benchmark bench
   type:
     exitcode-stdio-1.0
   main-is:
-    BenchmarkMain.hs
+    BenchMain.hs
   other-modules:
     ForeignSorting
   hs-source-dirs:
