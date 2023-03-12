@@ -92,12 +92,12 @@ sort4 !xs = do
           if x3 < x0
           then do
             GM.unsafeWrite xs 0 x2
-            GM.unsafeWrite xs 1 x1
+            -- GM.unsafeWrite xs 1 x1
             GM.unsafeWrite xs 2 x3
             GM.unsafeWrite xs 3 x0
           else do
             GM.unsafeWrite xs 0 x2
-            GM.unsafeWrite xs 1 x1
+            -- GM.unsafeWrite xs 1 x1
             GM.unsafeWrite xs 2 x0
             GM.unsafeWrite xs 3 x3
       else
@@ -106,7 +106,7 @@ sort4 !xs = do
           if x3 < x1
           then do
             GM.unsafeWrite xs 0 x3
-            GM.unsafeWrite xs 1 x1
+            -- GM.unsafeWrite xs 1 x1
             GM.unsafeWrite xs 2 x2
             GM.unsafeWrite xs 3 x0
           else do
