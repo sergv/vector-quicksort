@@ -82,6 +82,71 @@ library
     , stm
     , vector
 
+library vector-quicksort-predefined
+  import: ghc-options
+
+  exposed-modules:
+    Data.Vector.Algorithms.Quicksort.Predefined.PIntSequentialMedian3ST
+    Data.Vector.Algorithms.Quicksort.Predefined.PIntSequentialMedian3IO
+    Data.Vector.Algorithms.Quicksort.Predefined.PIntParallelStrategiesMedian3ST
+    Data.Vector.Algorithms.Quicksort.Predefined.PIntParallelStrategiesMedian3IO
+    Data.Vector.Algorithms.Quicksort.Predefined.PIntSequentialMedian3or5ST
+    Data.Vector.Algorithms.Quicksort.Predefined.PIntParallelStrategiesMedian3or5ST
+    Data.Vector.Algorithms.Quicksort.Predefined.PIntParallelStrategiesMedian3or5IO
+
+    Data.Vector.Algorithms.Quicksort.Predefined.VIntSequentialMedian3ST
+    Data.Vector.Algorithms.Quicksort.Predefined.VIntSequentialMedian3IO
+    Data.Vector.Algorithms.Quicksort.Predefined.VPairSequentialMedian3ST
+    Data.Vector.Algorithms.Quicksort.Predefined.VPairSequentialMedian3IO
+    Data.Vector.Algorithms.Quicksort.Predefined.VIntParallelStrategiesMedian3ST
+    Data.Vector.Algorithms.Quicksort.Predefined.VIntParallelStrategiesMedian3IO
+    Data.Vector.Algorithms.Quicksort.Predefined.VPairParallelStrategiesMedian3ST
+    Data.Vector.Algorithms.Quicksort.Predefined.VPairParallelStrategiesMedian3IO
+
+    Data.Vector.Algorithms.Quicksort.Predefined.VIntSequentialMedian3or5ST
+    Data.Vector.Algorithms.Quicksort.Predefined.VIntSequentialMedian3or5IO
+    Data.Vector.Algorithms.Quicksort.Predefined.VPairSequentialMedian3or5ST
+    Data.Vector.Algorithms.Quicksort.Predefined.VPairSequentialMedian3or5IO
+    Data.Vector.Algorithms.Quicksort.Predefined.VIntParallelStrategiesMedian3or5ST
+    Data.Vector.Algorithms.Quicksort.Predefined.VIntParallelStrategiesMedian3or5IO
+    Data.Vector.Algorithms.Quicksort.Predefined.VPairParallelStrategiesMedian3or5ST
+    Data.Vector.Algorithms.Quicksort.Predefined.VPairParallelStrategiesMedian3or5IO
+
+    Data.Vector.Algorithms.Quicksort.Predefined.UIntSequentialMedian3ST
+    Data.Vector.Algorithms.Quicksort.Predefined.UIntSequentialMedian3IO
+    Data.Vector.Algorithms.Quicksort.Predefined.UPairSequentialMedian3ST
+    Data.Vector.Algorithms.Quicksort.Predefined.UPairSequentialMedian3IO
+    Data.Vector.Algorithms.Quicksort.Predefined.UIntParallelStrategiesMedian3ST
+    Data.Vector.Algorithms.Quicksort.Predefined.UIntParallelStrategiesMedian3IO
+    Data.Vector.Algorithms.Quicksort.Predefined.UPairParallelStrategiesMedian3ST
+    Data.Vector.Algorithms.Quicksort.Predefined.UPairParallelStrategiesMedian3IO
+
+    Data.Vector.Algorithms.Quicksort.Predefined.UIntSequentialMedian3or5ST
+    Data.Vector.Algorithms.Quicksort.Predefined.UIntSequentialMedian3or5IO
+    Data.Vector.Algorithms.Quicksort.Predefined.UPairSequentialMedian3or5ST
+    Data.Vector.Algorithms.Quicksort.Predefined.UPairSequentialMedian3or5IO
+    Data.Vector.Algorithms.Quicksort.Predefined.UIntParallelStrategiesMedian3or5ST
+    Data.Vector.Algorithms.Quicksort.Predefined.UIntParallelStrategiesMedian3or5IO
+    Data.Vector.Algorithms.Quicksort.Predefined.UPairParallelStrategiesMedian3or5ST
+    Data.Vector.Algorithms.Quicksort.Predefined.UPairParallelStrategiesMedian3or5IO
+
+  hs-source-dirs:
+    src-predefined
+
+  build-depends:
+    , async > 2
+    , atomic-counter
+    , base >= 4.14
+    , parallel
+    , primitive
+    , stm
+    , vector
+    , vector-quicksort
+
+  ghc-options:
+    -flate-specialise
+    -fspecialise-aggressively
+
 test-suite test
   import: ghc-options
   type:
@@ -98,9 +163,53 @@ test-suite test
     , tasty
     , tasty-quickcheck
     , vector
-    , vector-quicksort
+    , vector-quicksort-predefined
   ghc-options:
     -rtsopts
     -threaded
     "-with-rtsopts=-N -A32M"
     -main-is TestMain
+
+library vector-quicksort-cpp
+  default-language:
+    GHC2021
+  include-dirs:
+    cbits
+  cxx-sources:
+    cbits/sort.cpp
+  cxx-options: -std=c++17
+  -- if impl(ghc >= 9.4)
+  --   build-depends: system-cxx-std-lib == 1.0
+  if os(linux)
+    extra-libraries: stdc++
+
+benchmark bench
+  import: ghc-options
+  type:
+    exitcode-stdio-1.0
+  main-is:
+    BenchmarkMain.hs
+  other-modules:
+    ForeignSorting
+  hs-source-dirs:
+    bench
+  build-depends:
+    , atomic-counter
+    , base >= 4.14
+    , bytestring
+    , deepseq
+    , primitive
+    , stm
+    , tasty
+    , tasty-bench >= 0.3.2
+    , text
+    , vector
+    , vector-algorithms
+    , vector-quicksort
+    , vector-quicksort-cpp
+    , vector-quicksort-predefined
+  ghc-options:
+    -rtsopts
+    -threaded
+    "-with-rtsopts=-N -A32M"
+    -main-is BenchmarkMain
