@@ -1,4 +1,6 @@
 packages:
   vector-quicksort.cabal
 
-tests: True
+package vector-quicksort
+  tests: True
+  benchmarks: True

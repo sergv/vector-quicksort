@@ -25,9 +25,9 @@ sort3
   :: (PrimMonad m, GM.MVector v a, Ord a)
   => v (PrimState m) a -> m ()
 sort3 !xs = do
-  x0 <- GM.unsafeRead xs 0
-  x1 <- GM.unsafeRead xs 1
-  x2 <- GM.unsafeRead xs 2
+  !x0 <- GM.unsafeRead xs 0
+  !x1 <- GM.unsafeRead xs 1
+  !x2 <- GM.unsafeRead xs 2
   if x1 < x0
   then
     if x2 < x0
@@ -65,10 +65,10 @@ sort4
   :: (PrimMonad m, GM.MVector v a, Ord a)
   => v (PrimState m) a -> m ()
 sort4 !xs = do
-  x0 <- GM.unsafeRead xs 0
-  x1 <- GM.unsafeRead xs 1
-  x2 <- GM.unsafeRead xs 2
-  x3 <- GM.unsafeRead xs 3
+  !x0 <- GM.unsafeRead xs 0
+  !x1 <- GM.unsafeRead xs 1
+  !x2 <- GM.unsafeRead xs 2
+  !x3 <- GM.unsafeRead xs 3
   if x1 < x0
   then
     if x2 < x0
@@ -237,6 +237,7 @@ sort4 !xs = do
           pure ()
 
 {-# INLINABLE bitonicSort #-}
+-- Sorts vectors strictly below length of 17. Otherwise does nothing
 bitonicSort :: forall m v a. (PrimMonad m, Ord a, GM.MVector v a) => Int -> v (PrimState m) a -> m ()
 bitonicSort !n !v = do
   case n of
@@ -667,8 +668,8 @@ bitonicSort !n !v = do
   where
     swap :: Int -> Int -> m ()
     swap !i !j = do
-      x <- GM.unsafeRead v i
-      y <- GM.unsafeRead v j
-      when (x > y) $ do
+      !x <- GM.unsafeRead v i
+      !y <- GM.unsafeRead v j
+      when (y < x) $ do
         GM.unsafeWrite v i y
         GM.unsafeWrite v j x

@@ -14,12 +14,11 @@ import Control.Monad.ST
 import Data.Int
 import Data.Vector qualified as V
 
-import Data.Vector.Algorithms.Quicksort qualified as Quick
-import Data.Vector.Algorithms.Quicksort.Fork
-import Data.Vector.Algorithms.Quicksort.Median
+import Data.Vector.Algorithms.Quicksort.Parameterised
 
+import Data.Vector.Algorithms.Quicksort.Predefined.VIntSequentialMedian3ST ()
 
 {-# NOINLINE sortVIntSequentialMedian3or5ST #-}
 sortVIntSequentialMedian3or5ST :: V.MVector s Int64 -> ST s ()
-sortVIntSequentialMedian3or5ST = Quick.sort Sequential (Median3or5 @Int64)
+sortVIntSequentialMedian3or5ST = sortFM Sequential (Median3or5 @Int64)
 

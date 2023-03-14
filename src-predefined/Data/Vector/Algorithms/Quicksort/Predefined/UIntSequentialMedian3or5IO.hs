@@ -14,13 +14,12 @@ import Control.Monad.ST
 import Data.Int
 import Data.Vector.Unboxed qualified as U
 
-import Data.Vector.Algorithms.Quicksort qualified as Quick
-import Data.Vector.Algorithms.Quicksort.Fork
-import Data.Vector.Algorithms.Quicksort.Median
+import Data.Vector.Algorithms.Quicksort.Parameterised
 
+import Data.Vector.Algorithms.Quicksort.Predefined.UIntSequentialMedian3IO ()
 
 {-# NOINLINE sortUIntSequentialMedian3or5IO #-}
 sortUIntSequentialMedian3or5IO :: U.MVector RealWorld Int64 -> IO ()
-sortUIntSequentialMedian3or5IO = Quick.sort Sequential (Median3or5 @Int64)
+sortUIntSequentialMedian3or5IO = sortFM Sequential (Median3or5 @Int64)
 
 

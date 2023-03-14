@@ -7,39 +7,70 @@
 ----------------------------------------------------------------------------
 
 {-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE MagicHash              #-}
+{-# LANGUAGE TypeFamilies           #-}
 {-# LANGUAGE UndecidableInstances   #-}
 
 module Data.Vector.Algorithms.Quicksort.Median
   ( Median(..)
   , Median3(..)
   , Median3or5(..)
+  , MedianResult(..)
   ) where
 
 import Prelude hiding (last)
 
 import Control.Monad.Primitive
 import Data.Bits
+import Data.Function
 import Data.Kind (Type)
 import Data.Vector.Generic.Mutable qualified as GM
 
--- import Debug.Trace qualified
--- import Data.FuzzyMatch.SortKey
--- import Data.Int
--- import Data.Word
+-- | Median selection result.
+data MedianResult a
+  -- | Value that was located at specific index in the original array.
+  = ExistingValue !a {-# UNPACK #-} !Int
+  -- | Value that is a good guess for a real median but may not be
+  -- present in the array (or we don't know where it's exactly).
+  --
+  -- Good example is to pick first, last, and middle element and
+  -- average them, which restricts us to dealing with numeric values
+  -- but may yield good results depending on distribution of values in
+  -- the array to be sorted.
+  | Guess !a
 
--- | Instance can be declared for specific monad. This is useful if we want
+existingValue :: CmpFst a Int -> MedianResult a
+existingValue (CmpFst (x, n)) = ExistingValue x n
+
+-- | Median selection algorithm that, given array, should come up with
+-- an elements that has good chances to be median (i.e to be greater
+-- that half the elements and lower than the other remaining half).
+-- The closer to the real median the selected element is, the faster
+-- quicksort will run and the better parallelisation will be achieved.
+--
+-- Instance can be declared for specific monad. This is useful if we want
 -- to select median at random and need to thread random gen.
 class Median (a :: Type) (b :: Type) (m :: Type -> Type) (s :: Type) | a -> b, m -> s where
-  selectMedian :: (GM.MVector v b, Ord b) => a -> v s b -> m b
+  -- | Come up with a median value of a given array
+  selectMedian
+    :: (GM.MVector v b, Ord b)
+    => a     -- ^ Median algorithm than can carry extra info to be
+             -- used during median selection (e.g. random generator)
+    -> v s b -- ^ Arary
+    -> m (MedianResult b)
 
+-- | Pick first, last, and the middle elements and find the one that's between the other two, e.g.
+-- given elements @a@, @b@, and @c@ find @y@ among them that satisfies @x <= y <= z@.
 data Median3 a = Median3
 
+-- | Pick first, last, and the middle elements, if all of them are
+-- distinct then return median of 3 like 'Median3' does, otherwise
+-- take median of 5 from the already taken 3 and extra 2 elements at
+-- 1/4th and 3/4th of array length.
 data Median3or5 a = Median3or5
 
--- to32 :: Integral a => a -> Int32
--- to32 = fromIntegral
-
 {-# INLINE pick3 #-}
+-- Pick median among 3 values.
 pick3 :: Ord a => a -> a -> a -> a
 pick3 a b c =
   if b < a
@@ -73,6 +104,7 @@ pick3 a b c =
       b
 
 {-# INLINE sort3 #-}
+-- Establish sortered order among 3 values.
 sort3 :: Ord a => a -> a -> a -> (a, a, a)
 sort3 a b c =
   if b < a
@@ -105,6 +137,18 @@ sort3 a b c =
       -- a <= b <= c
       (a, b, c)
 
+newtype CmpFst a b = CmpFst { unCmpFst :: (a, b) }
+
+instance Eq a => Eq (CmpFst a b) where
+  (==) = (==) `on` fst . unCmpFst
+
+instance Ord a => Ord (CmpFst a b) where
+  compare = compare `on` fst . unCmpFst
+
+{-# INLINE readAt #-}
+readAt :: (PrimMonad m, GM.MVector v a) => v (PrimState m) a -> Int -> m (CmpFst a Int)
+readAt xs n = (\x -> CmpFst (x, n)) <$> GM.unsafeRead xs n
+
 instance (PrimMonad m, s ~ PrimState m) => Median (Median3 a) a m s where
   {-# INLINE selectMedian #-}
   selectMedian
@@ -112,22 +156,18 @@ instance (PrimMonad m, s ~ PrimState m) => Median (Median3 a) a m s where
        (GM.MVector v a, Ord a)
     => Median3 a
     -> v s a
-    -> m a
-  selectMedian _ v = do
+    -> m (MedianResult a)
+  selectMedian _ !v = do
     let len :: Int
         !len = GM.length v
         pi0, pi1, pi2 :: Int
         !pi0  = 0
-        !pi1  = len `unsafeShiftR` 1
-        !pi2  = last
-        last :: Int
-        !last = len - 1
-    (pv0 :: a) <- GM.unsafeRead v pi0
-    (pv1 :: a) <- GM.unsafeRead v pi1
-    (pv2 :: a) <- GM.unsafeRead v pi2
-
-    pure $! pick3 pv0 pv1 pv2
-
+        !pi1  = halve len
+        !pi2  = len - 1
+    !pv0 <- readAt v pi0
+    !pv1 <- readAt v pi1
+    !pv2 <- readAt v pi2
+    pure $! existingValue $ pick3 pv0 pv1 pv2
 
 instance (PrimMonad m, s ~ PrimState m) => Median (Median3or5 a) a m s where
   {-# INLINE selectMedian #-}
@@ -136,30 +176,28 @@ instance (PrimMonad m, s ~ PrimState m) => Median (Median3or5 a) a m s where
        (GM.MVector v a, Ord a)
     => Median3or5 a
     -> v s a
-    -> m a
-  selectMedian _ v = do
+    -> m (MedianResult a)
+  selectMedian _ !v = do
     let len :: Int
         !len = GM.length v
         pi0, pi1, pi2 :: Int
         !pi0  = 0
-        !pi1  = len `unsafeShiftR` 1
-        !pi2  = last
-        last :: Int
-        !last = len - 1
-    (pv0 :: a) <- GM.unsafeRead v pi0
-    (pv1 :: a) <- GM.unsafeRead v pi1
-    (pv2 :: a) <- GM.unsafeRead v pi2
+        !pi1  = halve len
+        !pi2  = len - 1
+    !pv0 <- readAt v pi0
+    !pv1 <- readAt v pi1
+    !pv2 <- readAt v pi2
 
-    if len < 1000
-    then pure $! pick3 pv0 pv1 pv2
+    -- If median of 3 has chances to be good enough
+    if pv0 /= pv1 && pv1 /= pv2 && pv2 /= pv0
+    then pure $! existingValue $ pick3 pv0 pv1 pv2
     else do
       let pi01, pi12 :: Int
-          !pi01 = pi1 `unsafeShiftR` 1
+          !pi01 = halve pi1
           !pi12 = pi1 + pi01
-    -- let !med = pick3 pv0 pv1 pv2
 
-      (pv01 :: a) <- GM.unsafeRead v pi01
-      (pv12 :: a) <- GM.unsafeRead v pi12
+      !pv01 <- readAt v pi01
+      !pv12 <- readAt v pi12
 
       let (!mn, !med, !mx) = sort3 pv0 pv1 pv2
           (!mn', !mx')
@@ -171,9 +209,8 @@ instance (PrimMonad m, s ~ PrimState m) => Median (Median3or5 a) a m s where
             | mx' < mn  = mn
             | otherwise = pick3 mn' med mx'
 
-      -- Debug.Trace.trace ("pv0 = " ++ show (to32 pv0) ++ ", pv1 = " ++ show (to32 pv1) ++ ", pv2 = " ++ show (to32 pv2) ++ ", len = " ++ show len ++ ", pv01 = " ++ show (to32 pv01) ++ ", pv12 = " ++ show (to32 pv12) ++ ", med = " ++ show (to32 med) ++ ", med' = " ++ show (to32 med')) $
-      pure $! med'
+      pure $! existingValue med'
 
-
-
-
+{-# INLINE halve #-}
+halve :: Int -> Int
+halve x = x `unsafeShiftR` 1

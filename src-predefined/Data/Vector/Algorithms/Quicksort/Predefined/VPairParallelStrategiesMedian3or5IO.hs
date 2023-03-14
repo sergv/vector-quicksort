@@ -14,13 +14,11 @@ import Control.Monad.ST
 import Data.Int
 import Data.Vector qualified as V
 
-import Data.Vector.Algorithms.Quicksort qualified as Quick
-import Data.Vector.Algorithms.Quicksort.Fork
-import Data.Vector.Algorithms.Quicksort.Median
+import Data.Vector.Algorithms.Quicksort.Parameterised
 
+import Data.Vector.Algorithms.Quicksort.Predefined.Pair
+import Data.Vector.Algorithms.Quicksort.Predefined.VPairSequentialMedian3IO ()
 
 {-# NOINLINE sortVPairParallelStrategiesMedian3or5IO #-}
-sortVPairParallelStrategiesMedian3or5IO :: V.MVector RealWorld (Int32, Int32) -> IO ()
-sortVPairParallelStrategiesMedian3or5IO = Quick.sort ParStrategies (Median3or5 @(Int32, Int32))
-
-
+sortVPairParallelStrategiesMedian3or5IO :: V.MVector RealWorld (TestPair Int32 Int32) -> IO ()
+sortVPairParallelStrategiesMedian3or5IO = sortFM ParStrategies (Median3or5 @(TestPair Int32 Int32))

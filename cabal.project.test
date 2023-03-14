@@ -1,0 +1,8 @@
+packages:
+  vector-quicksort.cabal
+
+package vector-quicksort
+  tests: True
+
+constraints:
+  vector +BoundsChecks +UnsafeChecks +InternalChecks

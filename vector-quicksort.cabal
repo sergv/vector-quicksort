@@ -69,13 +69,12 @@ library
     Data.Vector.Algorithms.FixedSort
     Data.Vector.Algorithms.Heapsort
     Data.Vector.Algorithms.Quicksort
-    Data.Vector.Algorithms.Quicksort.Fork
+    Data.Vector.Algorithms.Quicksort.Fork2
     Data.Vector.Algorithms.Quicksort.Median
+    Data.Vector.Algorithms.Quicksort.Parameterised
   hs-source-dirs:
     src
   build-depends:
-    , async > 2
-    , atomic-counter
     , base >= 4.14
     , parallel
     , primitive
@@ -86,11 +85,17 @@ library vector-quicksort-predefined
   import: ghc-options
 
   exposed-modules:
+    Data.Vector.Algorithms.Quicksort.Predefined.Pair
+
+    Data.Vector.Algorithms.Quicksort.Predefined.PIntParallelMedian3IO
+    Data.Vector.Algorithms.Quicksort.Predefined.PIntParallelMedian3or5IO
+
     Data.Vector.Algorithms.Quicksort.Predefined.PIntSequentialMedian3ST
     Data.Vector.Algorithms.Quicksort.Predefined.PIntSequentialMedian3IO
     Data.Vector.Algorithms.Quicksort.Predefined.PIntParallelStrategiesMedian3ST
     Data.Vector.Algorithms.Quicksort.Predefined.PIntParallelStrategiesMedian3IO
     Data.Vector.Algorithms.Quicksort.Predefined.PIntSequentialMedian3or5ST
+    Data.Vector.Algorithms.Quicksort.Predefined.PIntSequentialMedian3or5IO
     Data.Vector.Algorithms.Quicksort.Predefined.PIntParallelStrategiesMedian3or5ST
     Data.Vector.Algorithms.Quicksort.Predefined.PIntParallelStrategiesMedian3or5IO
 
@@ -130,22 +135,33 @@ library vector-quicksort-predefined
     Data.Vector.Algorithms.Quicksort.Predefined.UPairParallelStrategiesMedian3or5ST
     Data.Vector.Algorithms.Quicksort.Predefined.UPairParallelStrategiesMedian3or5IO
 
+    Data.Vector.Algorithms.Quicksort.Predefined.VTupleSequentialMedian3ST
+    Data.Vector.Algorithms.Quicksort.Predefined.VTupleSequentialMedian3IO
+    Data.Vector.Algorithms.Quicksort.Predefined.VTupleParallelStrategiesMedian3ST
+    Data.Vector.Algorithms.Quicksort.Predefined.VTupleParallelStrategiesMedian3IO
+    Data.Vector.Algorithms.Quicksort.Predefined.VTupleSequentialMedian3or5ST
+    Data.Vector.Algorithms.Quicksort.Predefined.VTupleSequentialMedian3or5IO
+    Data.Vector.Algorithms.Quicksort.Predefined.VTupleParallelStrategiesMedian3or5ST
+    Data.Vector.Algorithms.Quicksort.Predefined.VTupleParallelStrategiesMedian3or5IO
+    Data.Vector.Algorithms.Quicksort.Predefined.UTupleSequentialMedian3ST
+    Data.Vector.Algorithms.Quicksort.Predefined.UTupleSequentialMedian3IO
+    Data.Vector.Algorithms.Quicksort.Predefined.UTupleParallelStrategiesMedian3ST
+    Data.Vector.Algorithms.Quicksort.Predefined.UTupleParallelStrategiesMedian3IO
+    Data.Vector.Algorithms.Quicksort.Predefined.UTupleSequentialMedian3or5ST
+    Data.Vector.Algorithms.Quicksort.Predefined.UTupleSequentialMedian3or5IO
+    Data.Vector.Algorithms.Quicksort.Predefined.UTupleParallelStrategiesMedian3or5ST
+    Data.Vector.Algorithms.Quicksort.Predefined.UTupleParallelStrategiesMedian3or5IO
+
   hs-source-dirs:
     src-predefined
 
   build-depends:
-    , async > 2
-    , atomic-counter
     , base >= 4.14
     , parallel
     , primitive
     , stm
     , vector
     , vector-quicksort
-
-  ghc-options:
-    -flate-specialise
-    -fspecialise-aggressively
 
 test-suite test
   import: ghc-options
@@ -160,6 +176,7 @@ test-suite test
     test
   build-depends:
     , base >= 4.14
+    , containers
     , tasty
     , tasty-quickcheck
     , vector
@@ -221,6 +238,7 @@ benchmark bench
     , bytestring
     , deepseq
     , primitive
+    , random
     , stm
     , tasty
     , tasty-bench >= 0.3.2
@@ -231,7 +249,8 @@ benchmark bench
     , vector-quicksort-cpp
     , vector-quicksort-predefined
   ghc-options:
+    -fno-spec-constr
     -rtsopts
     -threaded
-    "-with-rtsopts=-N -A32M"
+    "-with-rtsopts=-N -A16m -n1m -qg -qb"
     -main-is BenchmarkMain
