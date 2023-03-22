@@ -1,4 +1,4 @@
-#include <bits/stdc++.h>
+#include <algorithm>
 #include <cstdint>
 
 extern "C" {

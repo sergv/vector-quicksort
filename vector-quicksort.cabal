@@ -177,11 +177,33 @@ library vector-quicksort-cpp
     cbits
   cxx-sources:
     cbits/sort.cpp
-  cxx-options: -std=c++17
-  -- if impl(ghc >= 9.4)
-  --   build-depends: system-cxx-std-lib == 1.0
-  if os(linux)
+  cxx-options:
+    -std=c++17
+  -- Just like in the ‘text’ package, less critical for us since this
+  -- is a library for testing and benchmarking only.
+  if impl(ghc >= 9.4)
+    build-depends: system-cxx-std-lib == 1.0
+  elif os(darwin) || os(freebsd)
+    extra-libraries: c++
+  elif os(openbsd)
+    extra-libraries: c++ c++abi pthread
+  elif os(windows)
+    -- GHC's Windows toolchain is based on clang/libc++ in GHC 9.4 and later
+    if impl(ghc < 9.3)
+      extra-libraries: stdc++
+    else
+      extra-libraries: c++ c++abi
+  elif os(linux)
     extra-libraries: stdc++
+  else
+    -- This is supposed to be under arch(wasm32), but we can't do that yet
+    -- since cabal check would fail with unrecognized arch, see
+    -- https://github.com/haskell/cabal/pull/8096 for the fix.
+    -- TODO: when a new cabal release is out with that fix, bump cabal in CI
+    -- and add proper arch(wasm32) declaration here.
+    cpp-options: -DSIMDUTF_NO_THREADS
+    cxx-options: -fno-exceptions
+    extra-libraries: c++ c++abi
 
 benchmark bench
   import: ghc-options
