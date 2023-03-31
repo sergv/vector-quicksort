@@ -23,7 +23,6 @@ build-type:
   Simple
 
 extra-source-files:
-  Changelog.md
   Readme.md
 
 homepage:
