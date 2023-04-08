@@ -1,10 +1,8 @@
-----------------------------------------------------------------------------
 -- |
--- Module      :  ForeignSorting
--- Copyright   :  (c) Sergey Vinokurov 2023
--- License     :  Apache-2.0 (see LICENSE)
--- Maintainer  :  serg.foo@gmail.com
-----------------------------------------------------------------------------
+-- Module:     ForeignSorting
+-- Copyright:  (c) Sergey Vinokurov 2023
+-- License:    Apache-2.0 (see LICENSE)
+-- Maintainer: serg.foo@gmail.com
 
 module ForeignSorting
   ( cppSortInt64

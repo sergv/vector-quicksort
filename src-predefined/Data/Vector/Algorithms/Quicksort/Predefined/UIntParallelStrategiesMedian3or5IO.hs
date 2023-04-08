@@ -1,10 +1,8 @@
-----------------------------------------------------------------------------
 -- |
--- Module      :  Data.Vector.Algorithms.Quicksort.Predefined.UIntParallelStrategiesMedian3or5IO
--- Copyright   :  (c) Sergey Vinokurov 2023
--- License     :  Apache-2.0 (see LICENSE)
--- Maintainer  :  serg.foo@gmail.com
-----------------------------------------------------------------------------
+-- Module:     Data.Vector.Algorithms.Quicksort.Predefined.UIntParallelStrategiesMedian3or5IO
+-- Copyright:  (c) Sergey Vinokurov 2023
+-- License:    Apache-2.0 (see LICENSE)
+-- Maintainer: serg.foo@gmail.com
 
 module Data.Vector.Algorithms.Quicksort.Predefined.UIntParallelStrategiesMedian3or5IO
   ( sortUIntParallelStrategiesMedian3or5IO

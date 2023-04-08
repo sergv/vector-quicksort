@@ -4,10 +4,22 @@ name:
   vector-quicksort
 version:
   0.1
+
 synopsis:
-  TODO
+  Fast and flexible quicksort implementation for mutable vectors
+
 description:
-  TODO
+  Quicksort implementation developed with performance in mind. Has
+  good default single-threaded sort and provides parallelised versions
+  that are actually faster than the single-threaded one. User-defined
+  parallelisation methods are also supported.
+
+  Good starting point:
+
+  > import Data.Vector.Algorithms.Quicksort qualified as Quick
+  > -- Then call as
+  > Quick.sort xs
+
 copyright:
   (c) Sergey Vinokurov 2022
 license:
@@ -75,7 +87,6 @@ library
     src
   build-depends:
     , base >= 4.14
-    , parallel
     , primitive
     , stm
     , vector
@@ -84,6 +95,7 @@ library vector-quicksort-predefined
   import: ghc-options
 
   exposed-modules:
+    Data.Vector.Algorithms.Quicksort.Predefined.AveragingMedian
     Data.Vector.Algorithms.Quicksort.Predefined.Pair
 
     Data.Vector.Algorithms.Quicksort.Predefined.PIntParallelMedian3IO
@@ -97,6 +109,9 @@ library vector-quicksort-predefined
     Data.Vector.Algorithms.Quicksort.Predefined.PIntSequentialMedian3or5IO
     Data.Vector.Algorithms.Quicksort.Predefined.PIntParallelStrategiesMedian3or5ST
     Data.Vector.Algorithms.Quicksort.Predefined.PIntParallelStrategiesMedian3or5IO
+
+    Data.Vector.Algorithms.Quicksort.Predefined.PIntSequentialAveragingMedianST
+    Data.Vector.Algorithms.Quicksort.Predefined.UPairSequentialAveragingMedianST
 
     Data.Vector.Algorithms.Quicksort.Predefined.VIntSequentialMedian3ST
     Data.Vector.Algorithms.Quicksort.Predefined.VIntSequentialMedian3IO

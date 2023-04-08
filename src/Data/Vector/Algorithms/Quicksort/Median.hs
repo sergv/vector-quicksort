@@ -1,10 +1,8 @@
-----------------------------------------------------------------------------
 -- |
--- Module      :  Data.Vector.Algorithms.Quicksort.Median
--- Copyright   :  (c) Sergey Vinokurov 2023
--- License     :  Apache-2.0 (see LICENSE)
--- Maintainer  :  serg.foo@gmail.com
-----------------------------------------------------------------------------
+-- Module:     Data.Vector.Algorithms.Quicksort.Median
+-- Copyright:  (c) Sergey Vinokurov 2023
+-- License:    Apache-2.0 (see LICENSE)
+-- Maintainer: serg.foo@gmail.com
 
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE MagicHash              #-}
@@ -42,21 +40,28 @@ data MedianResult a
 existingValue :: CmpFst a Int -> MedianResult a
 existingValue (CmpFst (x, n)) = ExistingValue x n
 
--- | Median selection algorithm that, given array, should come up with
--- an elements that has good chances to be median (i.e to be greater
--- that half the elements and lower than the other remaining half).
--- The closer to the real median the selected element is, the faster
--- quicksort will run and the better parallelisation will be achieved.
+-- | Median selection algorithm that, given a vector, should come up
+-- with an elements that has good chances to be median (i.e to be
+-- greater that half the elements and lower than the other remaining
+-- half). The closer to the real median the selected element is, the
+-- faster quicksort will run and the better parallelisation will be
+-- achieved.
 --
 -- Instance can be declared for specific monad. This is useful if we want
 -- to select median at random and need to thread random gen.
+--
+-- Parameter meaning;
+-- - @a@ - the median parameter we're defining instance for
+-- - @b@ - type of ellements this median selection method is applicable to
+-- - @m@ - monad the median selection operates in
+-- - @s@ - the same ‘index’ as in ‘ST s’ because vector to be sorted is parameterised and @m@ may need to mention it
 class Median (a :: Type) (b :: Type) (m :: Type -> Type) (s :: Type) | a -> b, m -> s where
   -- | Come up with a median value of a given array
   selectMedian
     :: (GM.MVector v b, Ord b)
     => a     -- ^ Median algorithm than can carry extra info to be
              -- used during median selection (e.g. random generator)
-    -> v s b -- ^ Arary
+    -> v s b -- ^ Array
     -> m (MedianResult b)
 
 -- | Pick first, last, and the middle elements and find the one that's between the other two, e.g.

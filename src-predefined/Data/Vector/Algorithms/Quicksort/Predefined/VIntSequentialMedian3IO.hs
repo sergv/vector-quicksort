@@ -1,10 +1,8 @@
-----------------------------------------------------------------------------
 -- |
--- Module      :  Data.Vector.Algorithms.Quicksort.Predefined.VIntSequentialMedian3IO
--- Copyright   :  (c) Sergey Vinokurov 2023
--- License     :  Apache-2.0 (see LICENSE)
--- Maintainer  :  serg.foo@gmail.com
-----------------------------------------------------------------------------
+-- Module:     Data.Vector.Algorithms.Quicksort.Predefined.VIntSequentialMedian3IO
+-- Copyright:  (c) Sergey Vinokurov 2023
+-- License:    Apache-2.0 (see LICENSE)
+-- Maintainer: serg.foo@gmail.com
 
 {-# OPTIONS_GHC -Wno-orphans #-}
 

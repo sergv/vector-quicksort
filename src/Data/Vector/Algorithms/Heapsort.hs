@@ -1,10 +1,8 @@
-----------------------------------------------------------------------------
 -- |
--- Module      :  Data.Vector.Algorithms.Heapsort
--- Copyright   :  (c) Sergey Vinokurov 2023
--- License     :  Apache-2.0 (see LICENSE)
--- Maintainer  :  serg.foo@gmail.com
-----------------------------------------------------------------------------
+-- Module:     Data.Vector.Algorithms.Heapsort
+-- Copyright:  (c) Sergey Vinokurov 2023
+-- License:    Apache-2.0 (see LICENSE)
+-- Maintainer: serg.foo@gmail.com
 
 module Data.Vector.Algorithms.Heapsort
   ( heapSort
@@ -52,6 +50,10 @@ heapify !v =
     go n = shiftDown v n *> go (n - 1)
 
 {-# INLINABLE heapSort #-}
+-- | O(N * log(N)) regular heapsort (with 2-way heap, whereas vector-algorithm's is 4-way).
+-- Can be used as a standalone sort but main purpose is fallback sort for quicksort.
+--
+-- Depending on GHC may be good candidate for SPECIALIZE pragma.
 heapSort :: (PrimMonad m, Ord a, GM.MVector v a) => v (PrimState m) a -> m ()
 heapSort !v = do
   heapify v

@@ -1,10 +1,8 @@
-----------------------------------------------------------------------------
 -- |
--- Module      :  BenchmarkMain
--- Copyright   :  (c) Sergey Vinokurov 2022
--- License     :  Apache-2.0 (see LICENSE)
--- Maintainer  :  serg.foo@gmail.com
-----------------------------------------------------------------------------
+-- Module:     BenchmarkMain
+-- Copyright:  (c) Sergey Vinokurov 2022
+-- License:    Apache-2.0 (see LICENSE)
+-- Maintainer: serg.foo@gmail.com
 
 {-# LANGUAGE CPP                      #-}
 {-# LANGUAGE ForeignFunctionInterface #-}

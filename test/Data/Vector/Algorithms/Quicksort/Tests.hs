@@ -1,10 +1,8 @@
-----------------------------------------------------------------------------
 -- |
--- Module      :  Data.Vector.Algorithms.Quicksort.Tests
--- Copyright   :  (c) Sergey Vinokurov 2023
--- License     :  Apache-2.0 (see LICENSE)
--- Maintainer  :  serg.foo@gmail.com
-----------------------------------------------------------------------------
+-- Module:     Data.Vector.Algorithms.Quicksort.Tests
+-- Copyright:  (c) Sergey Vinokurov 2023
+-- License:    Apache-2.0 (see LICENSE)
+-- Maintainer: serg.foo@gmail.com
 
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE TypeApplications    #-}
@@ -27,6 +25,9 @@ import Test.Tasty
 import Test.Tasty.QuickCheck qualified as QC
 
 import Data.Vector.Algorithms.Quicksort.Predefined.Pair
+
+import Data.Vector.Algorithms.Quicksort.Predefined.PIntSequentialAveragingMedianST
+import Data.Vector.Algorithms.Quicksort.Predefined.UPairSequentialAveragingMedianST
 
 import Data.Vector.Algorithms.Quicksort.Predefined.PIntParallelMedian3IO
 import Data.Vector.Algorithms.Quicksort.Predefined.PIntParallelMedian3or5IO
@@ -129,7 +130,7 @@ runSortSTtoIO doSort xs = do
   G.toList <$> G.unsafeFreeze ys
 
 sortProps :: TestTree
-sortProps = localOption (QC.QuickCheckTests numTests) $ testGroup "sort properties"
+sortProps = localOption (QC.QuickCheckTests numTests) $ testGroup "sort does not lose items"
   [ testGroup "ST"
     [ QC.testProperty "Data.Vector (TestPair Int32 Int32) sorting Sequential Median3" $
       sortsAndDoesNotLoseItemsST @V.Vector sortVPairSequentialMedian3ST
@@ -148,6 +149,9 @@ sortProps = localOption (QC.QuickCheckTests numTests) $ testGroup "sort properti
       sortsAndDoesNotLoseItemsST @U.Vector sortUPairParallelStrategiesMedian3ST
     , QC.testProperty "Data.Vector.Unboxed (TestPair Int32 Int32) sorting ParallelStrategies Median3or5" $
       sortsAndDoesNotLoseItemsST @U.Vector sortUPairParallelStrategiesMedian3or5ST
+
+    , QC.testProperty "Data.Vector.Unboxed (TestPair Int32 Int32) sorting Sequential AveragingMedian" $
+      sortsAndDoesNotLoseItemsST @U.Vector sortUPairSequentialAveragingMedianST
     ]
   , testGroup "IO"
     [ QC.testProperty "Data.Vector (TestPair Int32 Int32) sorting Sequential Median3" $
@@ -186,6 +190,9 @@ sortProps = localOption (QC.QuickCheckTests numTests) $ testGroup "sort properti
       sortsAndDoesNotLoseItemsSTtoIO @U.Vector sortUPairParallelStrategiesMedian3ST
     , QC.testProperty "Data.Vector.Unboxed (TestPair Int32 Int32) sorting ParallelStrategies Median3or5" $
       sortsAndDoesNotLoseItemsSTtoIO @U.Vector sortUPairParallelStrategiesMedian3or5ST
+
+    , QC.testProperty "Data.Vector.Unboxed (TestPair Int32 Int32) sorting Sequential AveragingMedian" $
+      sortsAndDoesNotLoseItemsSTtoIO @U.Vector sortUPairSequentialAveragingMedianST
     ]
   ]
   where
@@ -270,6 +277,10 @@ sortTestsST = localOption (QC.QuickCheckTests numTests) $ testGroup "sort tests 
   , QC.testProperty "Data.Vector.Unboxed (Int32, Int32) sorting ParStrategies Median3or5" $
       \(xs :: [(Int32, Int32)]) ->
         runST (runSort @U.Vector sortUTupleParallelStrategiesMedian3or5ST xs) == L.sort xs
+
+  , QC.testProperty "Data.Vector.Primitive Int64 sorting Sequential AveragingMedian" $
+      \(xs :: [Int64]) ->
+        runST (runSort @P.Vector sortPIntSequentialAveragingMedianST xs) == L.sort xs
   ]
 
 sortTestsIO :: TestTree
@@ -386,5 +397,10 @@ sortTestsSTtoIO = localOption (QC.QuickCheckTests numTests) $ testGroup "sort te
   , QC.testProperty "Data.Vector.Unboxed (Int32, Int32) sorting ParStrategies Median3or5" $
       \(xs :: [(Int32, Int32)]) -> QC.ioProperty $ do
         ys <- runSortSTtoIO @U.Vector sortUTupleParallelStrategiesMedian3or5ST xs
+        pure $ ys == L.sort xs
+
+  , QC.testProperty "Data.Vector.Primitive Int64 sorting Sequential AveragingMedian" $
+      \(xs :: [Int64]) -> QC.ioProperty $ do
+        ys <- runSortSTtoIO @P.Vector sortPIntSequentialAveragingMedianST xs
         pure $ ys == L.sort xs
   ]

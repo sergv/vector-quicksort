@@ -1,10 +1,83 @@
-----------------------------------------------------------------------------
 -- |
--- Module      :  Data.Vector.Algorithms.Quicksort.Parameterised
--- Copyright   :  (c) Sergey Vinokurov 2023
--- License     :  Apache-2.0 (see LICENSE)
--- Maintainer  :  serg.foo@gmail.com
-----------------------------------------------------------------------------
+-- Module:     Data.Vector.Algorithms.Quicksort.Parameterised
+-- Copyright:  (c) Sergey Vinokurov 2023
+-- License:    Apache-2.0 (see LICENSE)
+-- Maintainer: serg.foo@gmail.com
+--
+-- This module provides fully generic quicksort for now allowing
+-- caller to decide how to parallelize and how to select median. More
+-- things may be parameterised in the future, likely by introducing
+-- new functions taking more arguments.
+--
+-- === Example
+-- This is how you’d define parallel sort on unboxed vectors of integers:
+--
+-- > import Control.Monad.ST
+-- > import Data.Int
+-- > import Data.Vector.Algorithms.Quicksort.Parameterised
+-- > import Data.Vector.Unboxed qualified as U
+-- >
+-- > {-# NOINLINE myParallelSort #-}
+-- > myParallelSort :: U.MVector s Int64 -> ST s ()
+-- > myParallelSort = sortFM ParStrategies (Median3or5 @Int64)
+--
+-- === Design considerations
+-- Because of reliance on specialisation, this package doesn't provide
+-- sort functions that take comparator function as argument. They rely
+-- on the 'Ord' instance instead. While somewhat limiting, this allows
+-- to offload optimization to the @SPECIALIZE@ pragmas even if compiler
+-- wasn't smart enough to monomorphise automatically.
+--
+-- === Performance considerations
+-- Compared to the default sort this one is even more sensitive to
+-- specialisation. Users caring about performance are advised to dump
+-- core and ensure that sort is monomorphised. The GHC 9.6.1 was seen
+-- to specialize automatically but 9.4 wasn't as good and required
+-- pragmas both for the main sort function and for its helpers, like this:
+--
+-- > -- Either use the flag to specialize everything, ...
+-- > {-# OPTIONS_GHC -fspecialise-aggressively #-}
+-- >
+-- > -- ... or the pragmas for specific functions
+-- > import Control.Monad.ST
+-- > import Data.Int
+-- > import Data.Vector.Algorithms.FixedSort
+-- > import Data.Vector.Algorithms.Heapsort
+-- > import Data.Vector.Algorithms.Quicksort.Parameterised
+-- > import Data.Vector.Unboxed qualified as U
+-- >
+-- > {-# SPECIALIZE heapSort    :: U.MVector s Int64 -> ST s ()        #-}
+-- > {-# SPECIALIZE bitonicSort :: Int -> U.MVector s Int64 -> ST s () #-}
+-- > {-# SPECIALIZE sortFM      :: Sequential -> Median3 Int64 -> U.MVector s Int64 -> ST s () #-}
+--
+-- === Speeding up compilation
+-- In order to speed up compilations it's a good idea to introduce
+-- dedicated module where all the sorts will reside and import it
+-- instead of calling @sort@ or @sortFM@ in moduler with other logic.
+-- This way the sort functions, which can take a while to compile, will be
+-- recompiled rarely.
+--
+-- > module MySorts (mySequentialSort) where
+-- >
+-- > import Control.Monad.ST
+-- > import Data.Int
+-- > import Data.Vector.Unboxed qualified as U
+-- >
+-- > import Data.Vector.Algorithms.Quicksort.Parameterised
+-- >
+-- > {-# NOINLINE mySequentialSort #-}
+-- > mySequentialSort :: U.MVector s Int64 -> ST s ()
+-- > mySequentialSort = sortFM Sequential (Median3or5 @Int64)
+--
+-- === Reducing code bloat
+-- Avoid using sorts with both 'ST' and 'IO' monads. Stick to the 'ST'
+-- monad as much as possible because it can be easily converted to
+-- 'IO' via safe 'stToIO' function. Using same sort in both 'IO' and
+-- 'ST' monads will compile two versions of it along with all it’s
+-- helper sorts which can be pretty big (especially the bitonic sort).
+
+-- So that haddock will resolve references in the documentation.
+{-# OPTIONS_GHC -Wno-unused-imports #-}
 
 module Data.Vector.Algorithms.Quicksort.Parameterised
   ( sortFM
@@ -24,8 +97,11 @@ import Data.Vector.Algorithms.Heapsort
 import Data.Vector.Algorithms.Quicksort.Fork2 as E
 import Data.Vector.Algorithms.Quicksort.Median as E
 
+-- For haddock
+import Control.Monad.ST
+
 {-# INLINABLE sortFM #-}
--- | Generic quicksort parameterised by median selection method and
+-- | Quicksort parameterised by median selection method and
 -- parallelisation strategy.
 sortFM
   :: forall p med x m a v.
@@ -66,14 +142,14 @@ sortFM !p !med !vector = do
             (!xi, !pi') <- partitionTwoWays pv (last - 1) v
             GM.unsafeWrite v pi' pv
             GM.unsafeWrite v last xi
-            pure (pi', pv)
+            pure (pi' + 1, pv)
 
-        !pi'' <- skipEq pv (pi' + 1) v
+        !pi'' <- skipEq pv pi' v
 
         let !left   = GM.unsafeSlice 0 pi' v
             !right  = GM.unsafeSlice pi'' (len - pi'') v
             !depth' = depth + 1
-        fork
+        fork2
           p
           releaseToken
           depth

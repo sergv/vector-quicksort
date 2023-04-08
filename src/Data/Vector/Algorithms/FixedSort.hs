@@ -1,10 +1,10 @@
-----------------------------------------------------------------------------
 -- |
--- Module      :  Data.Vector.Algorithms.FixedSort
--- Copyright   :  (c) Sergey Vinokurov 2023
--- License     :  Apache-2.0 (see LICENSE)
--- Maintainer  :  serg.foo@gmail.com
-----------------------------------------------------------------------------
+-- Module:     Data.Vector.Algorithms.FixedSort
+-- Copyright:  (c) Sergey Vinokurov 2023
+-- License:    Apache-2.0 (see LICENSE)
+-- Maintainer: serg.foo@gmail.com
+--
+-- Sorts for fixed number of elements. Mostly helpers for quicksort
 
 module Data.Vector.Algorithms.FixedSort
   ( sort3
@@ -237,7 +237,9 @@ sort4 !xs = do
           pure ()
 
 {-# INLINABLE bitonicSort #-}
--- Sorts vectors strictly below length of 17. Otherwise does nothing
+-- | Sorts vectors containing strictly less that 17 elements. Otherwise does nothing.
+--
+-- Depending on GHC may be good candidate for SPECIALIZE pragma.
 bitonicSort :: forall m v a. (PrimMonad m, Ord a, GM.MVector v a) => Int -> v (PrimState m) a -> m ()
 bitonicSort !n !v = do
   case n of
