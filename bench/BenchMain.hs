@@ -43,6 +43,7 @@ import Data.Vector.Algorithms.Quicksort.Predefined.PIntParallelStrategiesMedian3
 import Data.Vector.Algorithms.Quicksort.Predefined.PIntParallelStrategiesMedian3ST
 import Data.Vector.Algorithms.Quicksort.Predefined.PIntParallelStrategiesMedian3or5IO
 import Data.Vector.Algorithms.Quicksort.Predefined.PIntParallelStrategiesMedian3or5ST
+import Data.Vector.Algorithms.Quicksort.Predefined.PIntSequentialAveragingMedianST
 import Data.Vector.Algorithms.Quicksort.Predefined.PIntSequentialMedian3IO
 import Data.Vector.Algorithms.Quicksort.Predefined.PIntSequentialMedian3ST
 import Data.Vector.Algorithms.Quicksort.Predefined.PIntSequentialMedian3or5IO
@@ -92,6 +93,13 @@ qsortSeq3or5ST :: P.Vector Int64 -> ST s (PM.MVector s Int64)
 qsortSeq3or5ST xs = do
   ys <- P.thaw xs
   sortPIntSequentialMedian3or5ST ys
+  pure ys
+
+{-# NOINLINE qsortSeqAvgST #-}
+qsortSeqAvgST :: P.Vector Int64 -> ST s (PM.MVector s Int64)
+qsortSeqAvgST xs = do
+  ys <- P.thaw xs
+  sortPIntSequentialAveragingMedianST ys
   pure ys
 
 {-# NOINLINE qsortSeq3or5IO #-}
@@ -206,23 +214,25 @@ mkBenches
   :: forall f. (Traversable f, forall a. NFData a => NFData (f a))
   => String -> f (P.Vector Int64) -> Benchmark
 mkBenches name xssPrim = mapLeafBenchmarks addCompare $ bgroup name
-  [ bench cppBenchName                  $ nfAppIO (traverse cppUnboxedInt64) xsStorable
+  [ bench cppBenchName                    $ nfAppIO (traverse cppUnboxedInt64) xsStorable
 
-  , bench "Sequential ST Median3"       $ nfAppIO (stToIO . traverse qsortSeq3) xssPrim
-  , bench "Sequential IO Median3"       $ nfAppIO (traverse qsortSeqIO3) xssPrim
-  , bench "ParStrategies ST Median3"    $ nfAppIO (stToIO . traverse qsortParStrategies3ST) xssPrim
-  , bench "ParStrategies IO Median3"    $ nfAppIO (traverse qsortParStrategies3IO) xssPrim
+  , bench "Sequential ST Median3"         $ nfAppIO (stToIO . traverse qsortSeq3) xssPrim
+  , bench "Sequential IO Median3"         $ nfAppIO (traverse qsortSeqIO3) xssPrim
+  , bench "ParStrategies ST Median3"      $ nfAppIO (stToIO . traverse qsortParStrategies3ST) xssPrim
+  , bench "ParStrategies IO Median3"      $ nfAppIO (traverse qsortParStrategies3IO) xssPrim
 
-  , bench "Sequential ST Median3or5"    $ nfAppIO (stToIO . traverse qsortSeq3or5ST) xssPrim
-  , bench "Sequential IO Median3or5"    $ nfAppIO (traverse qsortSeq3or5IO) xssPrim
-  , bench "ParStrategies ST Median3or5" $ nfAppIO (stToIO . traverse qsortParStrategies3or5ST) xssPrim
-  , bench "ParStrategies IO Median3or5" $ nfAppIO (traverse qsortParStrategies3or5IO) xssPrim
+  , bench "Sequential ST Median3or5"      $ nfAppIO (stToIO . traverse qsortSeq3or5ST) xssPrim
+  , bench "Sequential IO Median3or5"      $ nfAppIO (traverse qsortSeq3or5IO) xssPrim
+  , bench "ParStrategies ST Median3or5"   $ nfAppIO (stToIO . traverse qsortParStrategies3or5ST) xssPrim
+  , bench "ParStrategies IO Median3or5"   $ nfAppIO (traverse qsortParStrategies3or5IO) xssPrim
 
-  , bench "Threads IO Median3"          $ nfAppIO (traverse qsortParallel3IO) xssPrim
-  , bench "Threads IO Median3or5"       $ nfAppIO (traverse qsortParallel3or5IO) xssPrim
+  , bench "Sequential ST AveragingMedian" $ nfAppIO (stToIO . traverse qsortSeqAvgST) xssPrim
 
-  , bench "vector-algorithms heapsort"  $ nfAppIO (stToIO . traverse vectorAlgoHeapsortInt64) xssPrim
-  , bench "fallback heapsort"           $ nfAppIO (stToIO . traverse fallbackHeapsortInt64) xssPrim
+  , bench "Threads IO Median3"            $ nfAppIO (traverse qsortParallel3IO) xssPrim
+  , bench "Threads IO Median3or5"         $ nfAppIO (traverse qsortParallel3or5IO) xssPrim
+
+  , bench "vector-algorithms heapsort"    $ nfAppIO (stToIO . traverse vectorAlgoHeapsortInt64) xssPrim
+  , bench "fallback heapsort"             $ nfAppIO (stToIO . traverse fallbackHeapsortInt64) xssPrim
   ]
   where
     xsStorable :: f (S.Vector Int64)
