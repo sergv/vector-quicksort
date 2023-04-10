@@ -105,49 +105,48 @@ waitParallel (Parallel _ pending) = atomically $ do
   then pure ()
   else retry
 
-instance Fork2 Parallel Bool IO where
+instance Fork2 Parallel (Bool, Bool) IO where
   {-# INLINE startWork #-}
   {-# INLINE endWork   #-}
   {-# INLINE fork2     #-}
   startWork !p = do
     addPending p
-    pure False
+    pure (False, True)
 
-  endWork !p !isSeq
-    | isSeq
-    = pure ()
-    | otherwise
+  endWork p (_, shouldDecrement)
+    | shouldDecrement
     = removePending p
+    | otherwise
+    = pure ()
 
   fork2
     :: forall b d. (HasLength b, HasLength d)
     => Parallel
-    -> Bool
+    -> (Bool, Bool)
     -> Int
-    -> (Bool -> b -> IO ())
-    -> (Bool -> d -> IO ())
+    -> ((Bool, Bool) -> b -> IO ())
+    -> ((Bool, Bool) -> d -> IO ())
     -> b
     -> d
     -> IO ()
-  fork2 !p@(Parallel jobs _) !isSeq !depth f g !b !d
+  fork2 !p@(Parallel jobs _) tok@(!isSeq, shouldDecrement) !depth f g !b !d
     | isSeq
-    = f True b *> g True d
+    = f (True, False) b *> g tok d
     | 2 `unsafeShiftL` depth < jobs && mn > 100 && mn * 10 > mx
     = do
       addPending p
-      _ <- forkIO $ f False b
-      g False d
+      _ <- forkIO $ f (False, True) b
+      g tok d
     | bLen > dLen
-    = f False b *> g True d
+    = f (False, False) b *> g (True, shouldDecrement) d
     | otherwise
-    = g False d *> f True b
+    = g (False, False) d *> f (True, shouldDecrement) b
     where
       bLen, dLen :: Int
       !bLen = getLength b
       !dLen = getLength d
 
-      !mn = min bLen dLen
-      !mx = max bLen dLen
+      (!mn, !mx) = if bLen < dLen then (bLen, dLen) else (dLen, bLen)
 
 -- | Parallelise with sparks. After partitioning if sides are
 -- sufficiently big then spark will be created to evaluate one of the
