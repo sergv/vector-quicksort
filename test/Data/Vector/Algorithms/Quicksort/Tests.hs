@@ -93,8 +93,8 @@ tests = testGroup "Data.Vector.Algorithms.Quicksort tests"
   , sortTestsSTtoIO
   ]
 
-numTests :: Int
-numTests = 100_000
+setTestCount :: QC.QuickCheckTests -> QC.QuickCheckTests
+setTestCount (QC.QuickCheckTests n) = QC.QuickCheckTests $ n `max` 100_000
 
 {-# INLINE runSort #-}
 runSort
@@ -130,7 +130,7 @@ runSortSTtoIO doSort xs = do
   G.toList <$> G.unsafeFreeze ys
 
 sortProps :: TestTree
-sortProps = localOption (QC.QuickCheckTests numTests) $ testGroup "sort does not lose items"
+sortProps = adjustOption setTestCount $ testGroup "sort does not lose items"
   [ testGroup "ST"
     [ QC.testProperty "Data.Vector (TestPair Int32 Int32) sorting Sequential Median3" $
       sortsAndDoesNotLoseItemsST @V.Vector sortVPairSequentialMedian3ST
@@ -238,7 +238,7 @@ sortProps = localOption (QC.QuickCheckTests numTests) $ testGroup "sort does not
         unsorted = zipWith TestPair xs [0..]
 
 sortTestsST :: TestTree
-sortTestsST = localOption (QC.QuickCheckTests numTests) $ testGroup "sort tests in ST"
+sortTestsST = adjustOption setTestCount $ testGroup "sort tests in ST"
   [ QC.testProperty "Data.Vector Int64 sorting Sequential Median3" $
       \(xs :: [Int64]) ->
         runST (runSort @V.Vector sortVIntSequentialMedian3ST xs) == L.sort xs
@@ -284,7 +284,7 @@ sortTestsST = localOption (QC.QuickCheckTests numTests) $ testGroup "sort tests 
   ]
 
 sortTestsIO :: TestTree
-sortTestsIO = localOption (QC.QuickCheckTests numTests) $ testGroup "sort tests in IO"
+sortTestsIO = adjustOption setTestCount $ testGroup "sort tests in IO"
   [ QC.testProperty "Data.Vector Int64 sorting Sequential Median3" $
       \(xs :: [Int64]) -> QC.ioProperty $ do
         ys <- runSortIO @V.Vector sortVIntSequentialMedian3IO xs
@@ -347,7 +347,7 @@ sortTestsIO = localOption (QC.QuickCheckTests numTests) $ testGroup "sort tests 
   ]
 
 sortTestsSTtoIO :: TestTree
-sortTestsSTtoIO = localOption (QC.QuickCheckTests numTests) $ testGroup "sort tests in IO via stToIO"
+sortTestsSTtoIO = adjustOption setTestCount $ testGroup "sort tests in IO via stToIO"
   [ QC.testProperty "Data.Vector Int64 sorting Sequential Median3" $
       \(xs :: [Int64]) -> QC.ioProperty $ do
         ys <- runSortSTtoIO @V.Vector sortVIntSequentialMedian3ST xs
