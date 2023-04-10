@@ -112,7 +112,10 @@ sortFM
   -> m ()
 sortFM !p !med !vector = do
   !releaseToken <- startWork p
-  qsortLoop 0 releaseToken vector
+  -- ParStrategies requires forcing the unit, otherwise we may return
+  -- while some sparks are still working.
+  () <- qsortLoop 0 releaseToken vector
+  pure ()
   where
     -- If we select bad median 4 times in a row then fall back to heapsort.
     !cutoffLen = GM.length vector `unsafeShiftL` 4
