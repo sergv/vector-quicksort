@@ -62,7 +62,7 @@ jobs:
     - name: Test
       run: |
         cd vector-quicksort-*/
-        cabal test --project-file cabal.project.test --enable-tests --test-show-details=direct all
+        cabal run --project-file cabal.project.test test -- --quickcheck-tests=200000 --quickcheck-max-size=1000
 
     - name: Doctest
       run: |
