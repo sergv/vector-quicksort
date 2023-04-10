@@ -98,6 +98,8 @@ library vector-quicksort-predefined
     Data.Vector.Algorithms.Quicksort.Predefined.AveragingMedian
     Data.Vector.Algorithms.Quicksort.Predefined.Pair
 
+    Data.Vector.Algorithms.Quicksort.Predefined.BitonicIntST
+
     Data.Vector.Algorithms.Quicksort.Predefined.PIntParallelMedian3IO
     Data.Vector.Algorithms.Quicksort.Predefined.PIntParallelMedian3or5IO
 
@@ -189,6 +191,7 @@ test-suite test
     .
     test
   build-depends:
+    , QuickCheck
     , base >= 4.14
     , containers
     , tasty
@@ -198,7 +201,7 @@ test-suite test
   ghc-options:
     -rtsopts
     -threaded
-    "-with-rtsopts=-N -A32M"
+    "-with-rtsopts=-N -A16m -n1m -qg -qb"
     -main-is TestMain
 
 library vector-quicksort-cpp

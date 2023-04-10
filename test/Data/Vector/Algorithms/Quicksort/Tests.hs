@@ -13,16 +13,20 @@
 module Data.Vector.Algorithms.Quicksort.Tests (tests) where
 
 import Control.Monad.ST
-import Data.Function
 import Data.Int
 import Data.List qualified as L
+import Data.Set (Set)
 import Data.Set qualified as S
 import Data.Vector qualified as V
 import Data.Vector.Generic qualified as G
 import Data.Vector.Primitive qualified as P
 import Data.Vector.Unboxed qualified as U
+import GHC.Generics (Generic)
+import Test.QuickCheck
 import Test.Tasty
 import Test.Tasty.QuickCheck qualified as QC
+
+import Data.Vector.Algorithms.Quicksort.Predefined.BitonicIntST
 
 import Data.Vector.Algorithms.Quicksort.Predefined.Pair
 
@@ -91,10 +95,11 @@ tests = testGroup "Data.Vector.Algorithms.Quicksort tests"
   , sortTestsST
   , sortTestsIO
   , sortTestsSTtoIO
+  , sortBitonic
   ]
 
-setTestCount :: QC.QuickCheckTests -> QC.QuickCheckTests
-setTestCount (QC.QuickCheckTests n) = QC.QuickCheckTests $ n `max` 100_000
+setTestCount :: TestTree -> TestTree
+setTestCount = adjustOption $ \(QC.QuickCheckTests n) -> QC.QuickCheckTests $ n `max` 100_000
 
 {-# INLINE runSort #-}
 runSort
@@ -129,8 +134,23 @@ runSortSTtoIO doSort xs = do
   stToIO $ doSort ys
   G.toList <$> G.unsafeFreeze ys
 
+checkIsSorted
+  :: (Show a, Ord a, Ord b)
+  => (a -> b)
+  -> [a]
+  -> (Set b, Property)
+checkIsSorted _ []         = (S.empty, property True)
+checkIsSorted f xs'@(x:xs) = go S.empty x xs
+  where
+    go !acc prev [] = (S.insert (f prev) acc, property True)
+    go  acc prev (y:ys)
+      | prev <= y
+      = go (S.insert (f prev) acc) y ys
+      | otherwise
+      = (acc, counterexample ("Result is not sorted: " ++ show xs') $ property False)
+
 sortProps :: TestTree
-sortProps = adjustOption setTestCount $ testGroup "sort does not lose items"
+sortProps = setTestCount $ testGroup "sort does not lose items"
   [ testGroup "ST"
     [ QC.testProperty "Data.Vector (TestPair Int32 Int32) sorting Sequential Median3" $
       sortsAndDoesNotLoseItemsST @V.Vector sortVPairSequentialMedian3ST
@@ -200,26 +220,29 @@ sortProps = adjustOption setTestCount $ testGroup "sort does not lose items"
       :: forall w v. (G.Vector w (TestPair Int32 Int32), v ~ G.Mutable w)
       => (forall s. G.Mutable w s (TestPair Int32 Int32) -> ST s ())
       -> [Int32]
-      -> QC.Property
+      -> Property
     sortsAndDoesNotLoseItemsST doSort xs =
-      ((QC.===) `on` S.fromList . map (snd . toTuple)) sorted unsorted
-      QC..&&.
-      ((QC.===) `on` map (fst . toTuple)) sorted (L.sort unsorted)
+      classify (length xs > 16) "non-trivial" $
+      isSorted .&&. items === S.fromList (map (snd . toTuple) unsorted)
       where
-        sorted   = runST $ runSort @w doSort unsorted
-        unsorted = zipWith TestPair xs [0..]
+        items :: Set Int32
+        (items, isSorted) = checkIsSorted (snd . toTuple) sorted
+        sorted, unsorted :: [TestPair Int32 Int32]
+        sorted                = runST $ runSort @w doSort unsorted
+        unsorted              = zipWith TestPair xs [0..]
 
     sortsAndDoesNotLoseItemsIO
       :: forall w v. (G.Vector w (TestPair Int32 Int32), v ~ G.Mutable w)
       => (G.Mutable w RealWorld (TestPair Int32 Int32) -> IO ())
       -> [Int32]
-      -> QC.Property
-    sortsAndDoesNotLoseItemsIO doSort xs = QC.ioProperty $ do
-      sorted <- runSortIO @w doSort unsorted
-      pure $
-        ((QC.===) `on` S.fromList . map (snd . toTuple)) sorted unsorted
-        QC..&&.
-        ((QC.===) `on` map (fst . toTuple)) sorted (L.sort unsorted)
+      -> Property
+    sortsAndDoesNotLoseItemsIO doSort xs =
+      classify (length xs > 16) "non-trivial" $ ioProperty $ do
+        sorted <- runSortIO @w doSort unsorted
+        let items :: Set Int32
+            (items, isSorted) = checkIsSorted (snd . toTuple) sorted
+        pure $
+          isSorted .&&. items === S.fromList (map (snd . toTuple) unsorted)
       where
         unsorted = zipWith TestPair xs [0..]
 
@@ -227,18 +250,19 @@ sortProps = adjustOption setTestCount $ testGroup "sort does not lose items"
       :: forall w v. (G.Vector w (TestPair Int32 Int32), v ~ G.Mutable w)
       => (forall s. G.Mutable w s (TestPair Int32 Int32) -> ST s ())
       -> [Int32]
-      -> QC.Property
-    sortsAndDoesNotLoseItemsSTtoIO doSort xs = QC.ioProperty $ do
-      sorted <- runSortSTtoIO @w doSort unsorted
-      pure $
-        ((QC.===) `on` S.fromList . map (snd . toTuple)) sorted unsorted
-        QC..&&.
-        ((QC.===) `on` map (fst . toTuple)) sorted (L.sort unsorted)
+      -> Property
+    sortsAndDoesNotLoseItemsSTtoIO doSort xs =
+      classify (length xs > 16) "non-trivial" $ ioProperty $ do
+        sorted <- runSortSTtoIO @w doSort unsorted
+        let items :: Set Int32
+            (items, isSorted) = checkIsSorted (snd . toTuple) sorted
+        pure $
+          isSorted .&&. items === S.fromList (map (snd . toTuple) unsorted)
       where
         unsorted = zipWith TestPair xs [0..]
 
 sortTestsST :: TestTree
-sortTestsST = adjustOption setTestCount $ testGroup "sort tests in ST"
+sortTestsST = setTestCount $ testGroup "sort tests in ST"
   [ QC.testProperty "Data.Vector Int64 sorting Sequential Median3" $
       \(xs :: [Int64]) ->
         runST (runSort @V.Vector sortVIntSequentialMedian3ST xs) == L.sort xs
@@ -284,123 +308,145 @@ sortTestsST = adjustOption setTestCount $ testGroup "sort tests in ST"
   ]
 
 sortTestsIO :: TestTree
-sortTestsIO = adjustOption setTestCount $ testGroup "sort tests in IO"
+sortTestsIO = setTestCount $ testGroup "sort tests in IO"
   [ QC.testProperty "Data.Vector Int64 sorting Sequential Median3" $
-      \(xs :: [Int64]) -> QC.ioProperty $ do
+      \(xs :: [Int64]) -> ioProperty $ do
         ys <- runSortIO @V.Vector sortVIntSequentialMedian3IO xs
         pure $ ys == L.sort xs
   , QC.testProperty "Data.Vector (Int32, Int32) sorting Sequential Median3" $
-      \(xs :: [(Int32, Int32)]) -> QC.ioProperty $ do
+      \(xs :: [(Int32, Int32)]) -> ioProperty $ do
         ys <- runSortIO @V.Vector sortVTupleSequentialMedian3IO xs
         pure $ ys == L.sort xs
   , QC.testProperty "Data.Vector.Unboxed Int64 sorting Sequential Median3" $
-      \(xs :: [Int64]) -> QC.ioProperty $ do
+      \(xs :: [Int64]) -> ioProperty $ do
         ys <- runSortIO @U.Vector sortUIntSequentialMedian3IO xs
         pure $ ys == L.sort xs
   , QC.testProperty "Data.Vector.Unboxed (Int32, Int32) sorting Sequential Median3" $
-      \(xs :: [(Int32, Int32)]) -> QC.ioProperty $ do
+      \(xs :: [(Int32, Int32)]) -> ioProperty $ do
         ys <- runSortIO @U.Vector sortUTupleSequentialMedian3IO xs
         pure $ ys == L.sort xs
 
   , QC.testProperty "Data.Vector Int64 sorting Sequential Median3or5" $
-      \(xs :: [Int64]) -> QC.ioProperty $ do
+      \(xs :: [Int64]) -> ioProperty $ do
         ys <- runSortIO @V.Vector sortVIntSequentialMedian3or5IO xs
         pure $ ys == L.sort xs
   , QC.testProperty "Data.Vector (Int32, Int32) sorting Sequential Median3or5" $
-      \(xs :: [(Int32, Int32)]) -> QC.ioProperty $ do
+      \(xs :: [(Int32, Int32)]) -> ioProperty $ do
         ys <- runSortIO @V.Vector sortVTupleSequentialMedian3or5IO xs
         pure $ ys == L.sort xs
   , QC.testProperty "Data.Vector.Unboxed Int64 sorting Sequential Median3or5" $
-      \(xs :: [Int64]) -> QC.ioProperty $ do
+      \(xs :: [Int64]) -> ioProperty $ do
         ys <- runSortIO @U.Vector sortUIntSequentialMedian3or5IO xs
         pure $ ys == L.sort xs
   , QC.testProperty "Data.Vector.Unboxed (Int32, Int32) sorting Sequential Median3or5" $
-      \(xs :: [(Int32, Int32)]) -> QC.ioProperty $ do
+      \(xs :: [(Int32, Int32)]) -> ioProperty $ do
         ys <- runSortIO @U.Vector sortUTupleSequentialMedian3or5IO xs
         pure $ ys == L.sort xs
 
   , QC.testProperty "Data.Vector Int64 sorting ParStrategies Median3or5" $
-      \(xs :: [Int64]) -> QC.ioProperty $ do
+      \(xs :: [Int64]) -> ioProperty $ do
         ys <- runSortIO @V.Vector sortVIntParallelStrategiesMedian3or5IO xs
         pure $ ys == L.sort xs
   , QC.testProperty "Data.Vector (Int32, Int32) sorting ParStrategies Median3or5" $
-      \(xs :: [(Int32, Int32)]) -> QC.ioProperty $ do
+      \(xs :: [(Int32, Int32)]) -> ioProperty $ do
         ys <- runSortIO @V.Vector sortVTupleParallelStrategiesMedian3or5IO xs
         pure $ ys == L.sort xs
   , QC.testProperty "Data.Vector.Unboxed Int64 sorting ParStrategies Median3or5" $
-      \(xs :: [Int64]) -> QC.ioProperty $ do
+      \(xs :: [Int64]) -> ioProperty $ do
         ys <- runSortIO @U.Vector sortUIntParallelStrategiesMedian3or5IO xs
         pure $ ys == L.sort xs
   , QC.testProperty "Data.Vector.Unboxed (Int32, Int32) sorting ParStrategies Median3or5" $
-      \(xs :: [(Int32, Int32)]) -> QC.ioProperty $ do
+      \(xs :: [(Int32, Int32)]) -> ioProperty $ do
         ys <- runSortIO @U.Vector sortUTupleParallelStrategiesMedian3or5IO xs
         pure $ ys == L.sort xs
 
   , QC.testProperty "Data.Vector.Primitive Int64 sorting Parallel Median3" $
-      \(xs :: [Int64]) -> QC.ioProperty $ do
+      \(xs :: [Int64]) -> ioProperty $ do
         ys <- runSortIO @P.Vector sortPIntParallelMedian3IO xs
         pure $ ys == L.sort xs
   , QC.testProperty "Data.Vector.Primitive Int64 sorting Parallel Median3or5" $
-      \(xs :: [Int64]) -> QC.ioProperty $ do
+      \(xs :: [Int64]) -> ioProperty $ do
         ys <- runSortIO @P.Vector sortPIntParallelMedian3or5IO xs
         pure $ ys == L.sort xs
   ]
 
 sortTestsSTtoIO :: TestTree
-sortTestsSTtoIO = adjustOption setTestCount $ testGroup "sort tests in IO via stToIO"
+sortTestsSTtoIO = setTestCount $ testGroup "sort tests in IO via stToIO"
   [ QC.testProperty "Data.Vector Int64 sorting Sequential Median3" $
-      \(xs :: [Int64]) -> QC.ioProperty $ do
+      \(xs :: [Int64]) -> ioProperty $ do
         ys <- runSortSTtoIO @V.Vector sortVIntSequentialMedian3ST xs
         pure $ ys == L.sort xs
   , QC.testProperty "Data.Vector (Int32, Int32) sorting Sequential Median3" $
-      \(xs :: [(Int32, Int32)]) -> QC.ioProperty $ do
+      \(xs :: [(Int32, Int32)]) -> ioProperty $ do
         ys <- runSortSTtoIO @V.Vector sortVTupleSequentialMedian3ST xs
         pure $ ys == L.sort xs
   , QC.testProperty "Data.Vector.Unboxed Int64 sorting Sequential Median3" $
-      \(xs :: [Int64]) -> QC.ioProperty $ do
+      \(xs :: [Int64]) -> ioProperty $ do
         ys <- runSortSTtoIO @U.Vector sortUIntSequentialMedian3ST xs
         pure $ ys == L.sort xs
   , QC.testProperty "Data.Vector.Unboxed (Int32, Int32) sorting Sequential Median3" $
-      \(xs :: [(Int32, Int32)]) -> QC.ioProperty $ do
+      \(xs :: [(Int32, Int32)]) -> ioProperty $ do
         ys <- runSortSTtoIO @U.Vector sortUTupleSequentialMedian3ST xs
         pure $ ys == L.sort xs
 
   , QC.testProperty "Data.Vector Int64 sorting Sequential Median3or5" $
-      \(xs :: [Int64]) -> QC.ioProperty $ do
+      \(xs :: [Int64]) -> ioProperty $ do
         ys <- runSortSTtoIO @V.Vector sortVIntSequentialMedian3or5ST xs
         pure $ ys == L.sort xs
   , QC.testProperty "Data.Vector (Int32, Int32) sorting Sequential Median3or5" $
-      \(xs :: [(Int32, Int32)]) -> QC.ioProperty $ do
+      \(xs :: [(Int32, Int32)]) -> ioProperty $ do
         ys <- runSortSTtoIO @V.Vector sortVTupleSequentialMedian3or5ST xs
         pure $ ys == L.sort xs
   , QC.testProperty "Data.Vector.Unboxed Int64 sorting Sequential Median3or5" $
-      \(xs :: [Int64]) -> QC.ioProperty $ do
+      \(xs :: [Int64]) -> ioProperty $ do
         ys <- runSortSTtoIO @U.Vector sortUIntSequentialMedian3or5ST xs
         pure $ ys == L.sort xs
   , QC.testProperty "Data.Vector.Unboxed (Int32, Int32) sorting Sequential Median3or5" $
-      \(xs :: [(Int32, Int32)]) -> QC.ioProperty $ do
+      \(xs :: [(Int32, Int32)]) -> ioProperty $ do
         ys <- runSortSTtoIO @U.Vector sortUTupleSequentialMedian3or5ST xs
         pure $ ys == L.sort xs
 
   , QC.testProperty "Data.Vector Int64 sorting ParStrategies Median3or5" $
-      \(xs :: [Int64]) -> QC.ioProperty $ do
+      \(xs :: [Int64]) -> ioProperty $ do
         ys <- runSortSTtoIO @V.Vector sortVIntParallelStrategiesMedian3or5ST xs
         pure $ ys == L.sort xs
   , QC.testProperty "Data.Vector (Int32, Int32) sorting ParStrategies Median3or5" $
-      \(xs :: [(Int32, Int32)]) -> QC.ioProperty $ do
+      \(xs :: [(Int32, Int32)]) -> ioProperty $ do
         ys <- runSortSTtoIO @V.Vector sortVTupleParallelStrategiesMedian3or5ST xs
         pure $ ys == L.sort xs
   , QC.testProperty "Data.Vector.Unboxed Int64 sorting ParStrategies Median3or5" $
-      \(xs :: [Int64]) -> QC.ioProperty $ do
+      \(xs :: [Int64]) -> ioProperty $ do
         ys <- runSortSTtoIO @U.Vector sortUIntParallelStrategiesMedian3or5ST xs
         pure $ ys == L.sort xs
   , QC.testProperty "Data.Vector.Unboxed (Int32, Int32) sorting ParStrategies Median3or5" $
-      \(xs :: [(Int32, Int32)]) -> QC.ioProperty $ do
+      \(xs :: [(Int32, Int32)]) -> ioProperty $ do
         ys <- runSortSTtoIO @U.Vector sortUTupleParallelStrategiesMedian3or5ST xs
         pure $ ys == L.sort xs
 
   , QC.testProperty "Data.Vector.Primitive Int64 sorting Sequential AveragingMedian" $
-      \(xs :: [Int64]) -> QC.ioProperty $ do
+      \(xs :: [Int64]) -> ioProperty $ do
         ys <- runSortSTtoIO @P.Vector sortPIntSequentialAveragingMedianST xs
         pure $ ys == L.sort xs
+  ]
+
+newtype BitonicInput a = BitonicInput [a]
+  deriving (Eq, Ord, Show, Generic)
+
+instance Arbitrary a => Arbitrary (BitonicInput a) where
+  shrink = genericShrink
+  arbitrary = do
+    len <- frequency [(2 ^ n, pure $ n + 2) | n <- [0..14]]
+    BitonicInput <$> vectorOf len arbitrary
+
+sortBitonic :: TestTree
+sortBitonic = setTestCount $ testGroup "bitonic sort"
+  [ QC.testProperty "Int64 ST" $
+      \(BitonicInput (xs :: [Int64])) ->
+        let zs = runST $ do
+              ys <- P.unsafeThaw $ P.fromList xs
+              bitonicSortIntST ys
+              P.unsafeFreeze ys
+        in
+        label ("length " ++ show (length xs)) $
+        zs === P.fromList (L.sort xs)
   ]
