@@ -18,4 +18,4 @@ import Data.Vector.Algorithms.Quicksort.Predefined.VTupleSequentialMedian3IO ()
 
 {-# NOINLINE sortVTupleParallelStrategiesMedian3or5IO #-}
 sortVTupleParallelStrategiesMedian3or5IO :: V.MVector RealWorld (Int32, Int32) -> IO ()
-sortVTupleParallelStrategiesMedian3or5IO = sortFM ParStrategies (Median3or5 @(Int32, Int32))
+sortVTupleParallelStrategiesMedian3or5IO = sortInplaceFM ParStrategies (Median3or5 @(Int32, Int32))

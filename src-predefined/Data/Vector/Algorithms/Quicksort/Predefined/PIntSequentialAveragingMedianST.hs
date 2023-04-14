@@ -19,6 +19,6 @@ import Data.Vector.Algorithms.Quicksort.Predefined.PIntSequentialMedian3ST ()
 
 {-# NOINLINE sortPIntSequentialAveragingMedianST #-}
 sortPIntSequentialAveragingMedianST :: P.MVector s Int64 -> ST s ()
-sortPIntSequentialAveragingMedianST = sortFM Sequential (AveragingMedian @Int64)
+sortPIntSequentialAveragingMedianST = sortInplaceFM Sequential (AveragingMedian @Int64)
 
 

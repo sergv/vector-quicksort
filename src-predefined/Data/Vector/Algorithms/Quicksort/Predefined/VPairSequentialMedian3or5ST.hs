@@ -19,6 +19,6 @@ import Data.Vector.Algorithms.Quicksort.Predefined.VPairSequentialMedian3ST ()
 
 {-# NOINLINE sortVPairSequentialMedian3or5ST #-}
 sortVPairSequentialMedian3or5ST :: V.MVector s (TestPair Int32 Int32) -> ST s ()
-sortVPairSequentialMedian3or5ST = sortFM Sequential (Median3or5 @(TestPair Int32 Int32))
+sortVPairSequentialMedian3or5ST = sortInplaceFM Sequential (Median3or5 @(TestPair Int32 Int32))
 
 

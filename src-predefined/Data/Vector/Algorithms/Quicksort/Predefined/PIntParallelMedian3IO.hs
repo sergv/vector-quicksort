@@ -21,6 +21,6 @@ import Data.Vector.Algorithms.Quicksort.Predefined.PIntSequentialMedian3IO ()
 sortPIntParallelMedian3IO :: P.MVector RealWorld Int64 -> IO ()
 sortPIntParallelMedian3IO xs = do
   p <- mkParallel =<< getNumCapabilities
-  sortFM p (Median3 @Int64) xs
+  sortInplaceFM p (Median3 @Int64) xs
   waitParallel p
 

@@ -19,4 +19,4 @@ import Data.Vector.Algorithms.Quicksort.Predefined.VPairSequentialMedian3ST ()
 
 {-# NOINLINE sortVPairParallelStrategiesMedian3ST #-}
 sortVPairParallelStrategiesMedian3ST :: V.MVector s (TestPair Int32 Int32) -> ST s ()
-sortVPairParallelStrategiesMedian3ST = sortFM ParStrategies (Median3 @(TestPair Int32 Int32))
+sortVPairParallelStrategiesMedian3ST = sortInplaceFM ParStrategies (Median3 @(TestPair Int32 Int32))

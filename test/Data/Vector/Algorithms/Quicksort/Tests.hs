@@ -4,9 +4,10 @@
 -- License:    Apache-2.0 (see LICENSE)
 -- Maintainer: serg.foo@gmail.com
 
-{-# LANGUAGE OverloadedStrings   #-}
-{-# LANGUAGE TypeApplications    #-}
-{-# LANGUAGE TypeFamilies        #-}
+{-# LANGUAGE DeriveGeneric     #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeApplications  #-}
+{-# LANGUAGE TypeFamilies      #-}
 
 {-# OPTIONS_GHC -fspecialise-aggressively #-}
 
@@ -149,6 +150,14 @@ checkIsSorted f xs'@(x:xs) = go S.empty x xs
       | otherwise
       = (acc, counterexample ("Result is not sorted: " ++ show xs') $ property False)
 
+newtype TestInput = TestInput { unTestInput :: [Int32] }
+  deriving (Eq, Ord, Show, Generic)
+
+instance Arbitrary TestInput where
+  shrink = filter ((17 <=) . length . unTestInput) . genericShrink
+  arbitrary =
+    TestInput <$> ((++) <$> vectorOf 17 arbitrary <*> arbitrary)
+
 sortProps :: TestTree
 sortProps = setTestCount $ testGroup "sort does not lose items"
   [ testGroup "ST"
@@ -219,10 +228,9 @@ sortProps = setTestCount $ testGroup "sort does not lose items"
     sortsAndDoesNotLoseItemsST
       :: forall w v. (G.Vector w (TestPair Int32 Int32), v ~ G.Mutable w)
       => (forall s. G.Mutable w s (TestPair Int32 Int32) -> ST s ())
-      -> [Int32]
+      -> TestInput
       -> Property
-    sortsAndDoesNotLoseItemsST doSort xs =
-      classify (length xs > 16) "non-trivial" $
+    sortsAndDoesNotLoseItemsST doSort (TestInput xs) =
       isSorted .&&. items === S.fromList (map (snd . toTuple) unsorted)
       where
         items :: Set Int32
@@ -234,30 +242,28 @@ sortProps = setTestCount $ testGroup "sort does not lose items"
     sortsAndDoesNotLoseItemsIO
       :: forall w v. (G.Vector w (TestPair Int32 Int32), v ~ G.Mutable w)
       => (G.Mutable w RealWorld (TestPair Int32 Int32) -> IO ())
-      -> [Int32]
+      -> TestInput
       -> Property
-    sortsAndDoesNotLoseItemsIO doSort xs =
-      classify (length xs > 16) "non-trivial" $ ioProperty $ do
-        sorted <- runSortIO @w doSort unsorted
-        let items :: Set Int32
-            (items, isSorted) = checkIsSorted (snd . toTuple) sorted
-        pure $
-          isSorted .&&. items === S.fromList (map (snd . toTuple) unsorted)
+    sortsAndDoesNotLoseItemsIO doSort (TestInput xs) = ioProperty $ do
+      sorted <- runSortIO @w doSort unsorted
+      let items :: Set Int32
+          (items, isSorted) = checkIsSorted (snd . toTuple) sorted
+      pure $
+        isSorted .&&. items === S.fromList (map (snd . toTuple) unsorted)
       where
         unsorted = zipWith TestPair xs [0..]
 
     sortsAndDoesNotLoseItemsSTtoIO
       :: forall w v. (G.Vector w (TestPair Int32 Int32), v ~ G.Mutable w)
       => (forall s. G.Mutable w s (TestPair Int32 Int32) -> ST s ())
-      -> [Int32]
+      -> TestInput
       -> Property
-    sortsAndDoesNotLoseItemsSTtoIO doSort xs =
-      classify (length xs > 16) "non-trivial" $ ioProperty $ do
-        sorted <- runSortSTtoIO @w doSort unsorted
-        let items :: Set Int32
-            (items, isSorted) = checkIsSorted (snd . toTuple) sorted
-        pure $
-          isSorted .&&. items === S.fromList (map (snd . toTuple) unsorted)
+    sortsAndDoesNotLoseItemsSTtoIO doSort (TestInput xs) = ioProperty $ do
+      sorted <- runSortSTtoIO @w doSort unsorted
+      let items :: Set Int32
+          (items, isSorted) = checkIsSorted (snd . toTuple) sorted
+      pure $
+        isSorted .&&. items === S.fromList (map (snd . toTuple) unsorted)
       where
         unsorted = zipWith TestPair xs [0..]
 

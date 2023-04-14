@@ -8,14 +8,28 @@
 --
 -- === Example
 --
+-- Vanilla vectors:
+--
+-- >>> import Data.Vector.Unboxed qualified as U
+-- >>> sort $ U.fromList @Int [20, 19 .. 0]
+-- [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]
+--
+-- Mutable vectors:
+--
 -- >>> import Control.Monad.ST (runST)
 -- >>> import Data.Vector.Unboxed qualified as U
 -- >>> :{
 -- runST $ do
 --   xs <- U.unsafeThaw $ U.fromList @Int [20, 19 .. 0]
---   sort xs
+--   sortInplace xs
 --   U.unsafeFreeze xs
 -- :}
+-- [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]
+--
+-- With 'U.modify':
+--
+-- >>> import Data.Vector.Unboxed qualified as U
+-- >>> U.modify sortInplace $ U.fromList @Int [20, 19 .. 0]
 -- [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]
 --
 -- === Performance considerations
@@ -49,26 +63,50 @@
 -- > {-# SPECIALIZE bitonicSort :: Int -> U.MVector RealWorld Int -> IO () #-}
 -- > {-# SPECIALIZE sort        :: U.MVector RealWorld Int -> IO ()        #-}
 
+{-# OPTIONS_GHC -Wno-orphans #-}
+
 module Data.Vector.Algorithms.Quicksort
   ( sort
+  , sortInplace
   ) where
 
 import Prelude hiding (last, pi)
 
 import Control.Monad.Primitive
+import Control.Monad.ST
+import Data.Vector.Generic qualified as G
 import Data.Vector.Generic.Mutable qualified as GM
 
 import Data.Vector.Algorithms.Quicksort.Parameterised
 
+{-# SPECIALIZE sortInplaceFM
+  :: (PrimMonad m, Ord a, GM.MVector v a) => Sequential -> Median3or5 a -> v (PrimState m) a -> m () #-}
+
 {-# INLINABLE sort #-}
--- | Good default sort.
+-- | Good default sort. Returns sorted copy.
+--
+-- This function takes generic vectors so will work with any vectors
+-- from the @vector@ package.
+sort
+  :: forall a v.
+     (Ord a, G.Vector v a)
+  => v a
+  -> v a
+sort xs = runST $ do
+  ys <- G.thaw xs
+  sortInplaceFM Sequential (Median3or5 @a) ys
+  G.unsafeFreeze ys
+
+{-# INLINABLE sortInplace #-}
+-- | Good default sort for mutable vectors.
 --
 -- This function takes generic mutable vectors so will work with any
 -- vectors from the @vector@ package.
-sort
+--
+-- May be a good candidate for use with with 'G.modify'.
+sortInplace
   :: forall m a v.
      (PrimMonad m, Ord a, GM.MVector v a)
   => v (PrimState m) a
   -> m ()
-sort = sortFM Sequential (Median3or5 @a)
-
+sortInplace = sortInplaceFM Sequential (Median3or5 @a)

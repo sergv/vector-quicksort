@@ -18,6 +18,6 @@ import Data.Vector.Algorithms.Quicksort.Predefined.UTupleSequentialMedian3ST ()
 
 {-# NOINLINE sortUTupleSequentialMedian3or5ST #-}
 sortUTupleSequentialMedian3or5ST :: U.MVector s (Int32, Int32) -> ST s ()
-sortUTupleSequentialMedian3or5ST = sortFM Sequential (Median3or5 @(Int32, Int32))
+sortUTupleSequentialMedian3or5ST = sortInplaceFM Sequential (Median3or5 @(Int32, Int32))
 
 

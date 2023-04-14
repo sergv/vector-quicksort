@@ -24,6 +24,6 @@ import Data.Vector.Algorithms.Heapsort
 
 {-# NOINLINE sortVIntSequentialMedian3ST #-}
 sortVIntSequentialMedian3ST :: V.MVector s Int64 -> ST s ()
-sortVIntSequentialMedian3ST = sortFM Sequential (Median3 @Int64)
+sortVIntSequentialMedian3ST = sortInplaceFM Sequential (Median3 @Int64)
 
 

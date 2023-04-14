@@ -18,5 +18,5 @@ import Data.Vector.Algorithms.Quicksort.Predefined.PIntSequentialMedian3ST ()
 
 {-# NOINLINE sortPIntSequentialMedian3or5ST #-}
 sortPIntSequentialMedian3or5ST :: P.MVector s Int64 -> ST s ()
-sortPIntSequentialMedian3or5ST = sortFM Sequential (Median3or5 @Int64)
+sortPIntSequentialMedian3or5ST = sortInplaceFM Sequential (Median3or5 @Int64)
 

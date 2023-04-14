@@ -24,4 +24,4 @@ import Data.Vector.Algorithms.Heapsort
 
 {-# NOINLINE sortUTupleSequentialMedian3IO #-}
 sortUTupleSequentialMedian3IO :: U.MVector RealWorld (Int32, Int32) -> IO ()
-sortUTupleSequentialMedian3IO = sortFM Sequential (Median3 @(Int32, Int32))
+sortUTupleSequentialMedian3IO = sortInplaceFM Sequential (Median3 @(Int32, Int32))

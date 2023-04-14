@@ -19,7 +19,7 @@
 -- >
 -- > {-# NOINLINE myParallelSort #-}
 -- > myParallelSort :: U.MVector s Int64 -> ST s ()
--- > myParallelSort = sortFM ParStrategies (Median3or5 @Int64)
+-- > myParallelSort = sortInplaceFM ParStrategies (Median3or5 @Int64)
 --
 -- === Design considerations
 -- Because of reliance on specialisation, this package doesn't provide
@@ -46,14 +46,14 @@
 -- > import Data.Vector.Algorithms.Quicksort.Parameterised
 -- > import Data.Vector.Unboxed qualified as U
 -- >
--- > {-# SPECIALIZE heapSort    :: U.MVector s Int64 -> ST s ()        #-}
--- > {-# SPECIALIZE bitonicSort :: Int -> U.MVector s Int64 -> ST s () #-}
--- > {-# SPECIALIZE sortFM      :: Sequential -> Median3 Int64 -> U.MVector s Int64 -> ST s () #-}
+-- > {-# SPECIALIZE heapSort      :: U.MVector s Int64 -> ST s ()        #-}
+-- > {-# SPECIALIZE bitonicSort   :: Int -> U.MVector s Int64 -> ST s () #-}
+-- > {-# SPECIALIZE sortInplaceFM :: Sequential -> Median3 Int64 -> U.MVector s Int64 -> ST s () #-}
 --
 -- === Speeding up compilation
 -- In order to speed up compilations it's a good idea to introduce
 -- dedicated module where all the sorts will reside and import it
--- instead of calling @sort@ or @sortFM@ in moduler with other logic.
+-- instead of calling @sort@ or @sortInplaceFM@ in moduler with other logic.
 -- This way the sort functions, which can take a while to compile, will be
 -- recompiled rarely.
 --
@@ -67,7 +67,7 @@
 -- >
 -- > {-# NOINLINE mySequentialSort #-}
 -- > mySequentialSort :: U.MVector s Int64 -> ST s ()
--- > mySequentialSort = sortFM Sequential (Median3or5 @Int64)
+-- > mySequentialSort = sortInplaceFM Sequential (Median3or5 @Int64)
 --
 -- === Reducing code bloat
 -- Avoid using sorts with both 'ST' and 'IO' monads. Stick to the 'ST'
@@ -80,7 +80,7 @@
 {-# OPTIONS_GHC -Wno-unused-imports #-}
 
 module Data.Vector.Algorithms.Quicksort.Parameterised
-  ( sortFM
+  ( sortInplaceFM
   -- * Reexports
   , module E
   ) where
@@ -100,17 +100,17 @@ import Data.Vector.Algorithms.Quicksort.Median as E
 -- For haddock
 import Control.Monad.ST
 
-{-# INLINABLE sortFM #-}
+{-# INLINABLE sortInplaceFM #-}
 -- | Quicksort parameterised by median selection method and
 -- parallelisation strategy.
-sortFM
+sortInplaceFM
   :: forall p med x m a v.
      (Fork2 p x m, Median med a m (PrimState m), PrimMonad m, Ord a, GM.MVector v a)
   => p
   -> med
   -> v (PrimState m) a
   -> m ()
-sortFM !p !med !vector = do
+sortInplaceFM !p !med !vector = do
   !releaseToken <- startWork p
   -- ParStrategies requires forcing the unit, otherwise we may return
   -- while some sparks are still working.
