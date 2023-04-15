@@ -9,10 +9,11 @@ synopsis:
   Fast and flexible quicksort implementation for mutable vectors
 
 description:
+
   Quicksort implementation developed with performance in mind. Has
   good default single-threaded sort and provides parallelised versions
-  that are actually faster than the single-threaded one. User-defined
-  parallelisation methods are also supported.
+  that are actually faster than the single-threaded version. Users can
+  define new parallelisation methods.
 
   Good starting point:
 
