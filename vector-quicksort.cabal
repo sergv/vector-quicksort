@@ -33,6 +33,8 @@ author:
   Sergey Vinokurov
 maintainer:
   Sergey Vinokurov <serg.foo@gmail.com>
+category:
+  Algorithms
 
 build-type:
   Simple
@@ -89,7 +91,7 @@ library
   hs-source-dirs:
     src
   build-depends:
-    , base >= 4.14
+    , base >= 4.14 && < 5
     , primitive
     , stm
     , vector
