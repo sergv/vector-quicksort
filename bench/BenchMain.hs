@@ -18,11 +18,15 @@ import Prelude hiding (pi, last)
 
 import Control.Concurrent.STM
 import Control.DeepSeq
+import Control.Exception
 import Control.Monad
 import Control.Monad.ST
 import Data.ByteString.Char8 qualified as C8
 import Data.Int
 import Data.Ord
+import Data.Text (Text)
+import Data.Text qualified as T
+import Data.Text.Builder.Linear qualified as TBL
 import Data.Tuple
 import Data.Vector.Algorithms.Heap qualified as Heap
 import Data.Vector.Primitive qualified as P
@@ -165,45 +169,27 @@ main = do
 
   putStrLn $ "P.length fuzzyMatchScores = " ++ show (P.length fuzzyMatchScores)
 
-  let generate n g = P.fromList <$> replicateM n (uniformRM (1 :: Int64, 128) g)
+  let generate :: Int -> Int -> IOGenM StdGen -> IO (P.Vector Int64)
+      generate n k g = P.fromList <$> replicateM n (uniformRM (1 :: Int64, fromIntegral k) g)
 
   gen       <- newIOGenM $ mkStdGen 1
-  let n :: Int
-      n = 1000
-  xssSmall16  <- replicateM n $ generate 16 gen
-  xssSmall17  <- replicateM n $ generate 17 gen
-  xssMid100   <- replicateM n $ generate 100 gen
-  xssMid      <- replicateM n $ generate 256 gen
-  xssLarge    <- replicateM n $ generate 20000 gen
-  xssHuge     <- replicateM n $ generate (P.length fuzzyMatchScores) gen
+  let sizes :: [(Int, Int)]
+      sizes = map (10, ) [16, 17, 100, 256, 1000, 10_000, 100_000, 1_000_000, 10_000_000]
+
+  xsssNoDup <- traverse (\(n, k) -> replicateM n $ generate k k gen) sizes
+  xsssDup   <- traverse (\(n, k) -> replicateM n $ generate k (max 1000 (k `quot` 1000)) gen) sizes
+
+  evaluate $ rnf xsssNoDup
+  evaluate $ rnf xsssDup
 
   defaultMain $
-    [ bgroup "Overhead thaw" $
-      [ bench "fuzzy scores vector" $ nfAppIO P.thaw fuzzyMatchScores
-      ] ++
-      [ bench (show (length xss) ++ " vectors of length " ++ show (P.length (head xss))) $
-        nfAppIO (traverse P.thaw) xss
-      | xss <-
-        [ xssSmall16
-        , xssSmall17
-        , xssMid100
-        , xssMid
-        , xssLarge
-        , xssHuge
-        ]
-      ]
-    ] ++
     [ mkBenches "Sorting fuzzy matching scores vector" (MkSolo fuzzyMatchScores)
     ] ++
-    [ mkBenches ("Sorting " ++ show (length xss) ++ " random arrays of length " ++ show (P.length (head xss))) xss
-    | xss <-
-      [ xssSmall16
-      , xssSmall17
-      , xssMid100
-      , xssMid
-      , xssLarge
-      , xssHuge
-      ]
+    [ mkBenches ("Sorting " ++ show (length xss) ++ " random arrays of length " ++ T.unpack (formatNumber (P.length (head xss))) ++ " with few duplicates") xss
+    | xss <- xsssNoDup
+    ] ++
+    [ mkBenches ("Sorting " ++ show (length xss) ++ " random arrays of length " ++ T.unpack (formatNumber (P.length (head xss))) ++ " with many duplicates") xss
+    | xss <- xsssDup
     ]
 
 instance NFData (TVar a) where
@@ -255,3 +241,17 @@ pattern MkSolo x = Solo x
 instance NFData a => NFData (Solo a)
 # endif
 #endif
+
+formatNumber :: Int -> Text
+formatNumber x = TBL.runBuilder $ sign <> go mempty (abs x)
+  where
+    sign :: TBL.Builder
+    sign = if x < 0 then "-" else ""
+    go :: TBL.Builder -> Int -> TBL.Builder
+    go acc n
+      | n < 1000  = TBL.fromDec n <> acc
+      | otherwise = go (TBL.fromChar ',' <> padding <> TBL.fromText k' <> acc) n'
+      where
+        (n', k) = n `quotRem` 1000
+        k'      = TBL.runBuilder $ TBL.fromDec k
+        padding = TBL.fromText $ T.replicate (3 - T.length k') $ T.singleton '0'
