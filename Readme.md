@@ -8,13 +8,13 @@ During development one of the goals was making it perform on par with
 C++’s `std::sort`, i.e. fast.
 
 While providing reasonably good single-threaded default sorting, the
-algorithm in this package is also parallelisable and can provides ways
+algorithm in this package is also parallelisable and can provide ways
 to run on multiple cores using either threads or sparks, so bigger
 vectors can be sorted even faster.
 
 # Algorithm details
 
-Technically it’s an (introsort)[https://en.wikipedia.org/wiki/Introsort], i.e.
+Technically it’s an [introsort](https://en.wikipedia.org/wiki/Introsort), i.e.
 pathological `O(N^2)` quicksort case will get delegated to heapsort when recursion
 gets too deep, thus making algorithm reliably `O(N * log(N))`.
 
