@@ -118,14 +118,18 @@ sortInplaceFM !p !med !vector = do
   pure ()
   where
     -- If we select bad median 4 times in a row then fall back to heapsort.
-    !cutoffLen = GM.length vector `unsafeShiftL` 4
+    !cutoffLen = GM.length vector
+
+    !logLen = binlog2 (GM.length vector)
+
+    !threshold = 2 * logLen
 
     qsortLoop :: Int -> x -> v (PrimState m) a -> m ()
     qsortLoop !depth !releaseToken !v
       | len < 17
       = bitonicSort len v *> endWork p releaseToken
 
-      | len `unsafeShiftL` depth > cutoffLen
+      | depth == threshold || if depthDiff > 0 then len `unsafeShiftL` depthDiff > cutoffLen else False
       = heapSort v *> endWork p releaseToken
 
       | otherwise = do
@@ -161,7 +165,8 @@ sortInplaceFM !p !med !vector = do
           left
           right
       where
-        len = GM.length v
+        !len       = GM.length v
+        !depthDiff = depth - logLen
 
 {-# INLINE partitionTwoWaysGuessedPivot #-}
 partitionTwoWaysGuessedPivot
@@ -239,3 +244,7 @@ skipEq !x !start !v = go start
         else pure k
       | otherwise
       = pure k
+
+{-# INLINE binlog2 #-}
+binlog2 :: Int -> Int
+binlog2 x = finiteBitSize x - 1 - countLeadingZeros x
