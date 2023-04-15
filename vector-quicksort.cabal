@@ -260,6 +260,7 @@ benchmark bench
     , tasty
     , tasty-bench >= 0.3.2
     , text
+    , text-builder-linear
     , vector
     , vector-algorithms
     , vector-quicksort

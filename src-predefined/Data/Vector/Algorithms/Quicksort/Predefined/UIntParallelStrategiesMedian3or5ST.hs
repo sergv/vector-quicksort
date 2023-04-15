@@ -18,5 +18,5 @@ import Data.Vector.Algorithms.Quicksort.Predefined.UIntSequentialMedian3ST ()
 
 {-# NOINLINE sortUIntParallelStrategiesMedian3or5ST #-}
 sortUIntParallelStrategiesMedian3or5ST :: U.MVector s Int64 -> ST s ()
-sortUIntParallelStrategiesMedian3or5ST = sortInplaceFM ParStrategies (Median3or5 @Int64)
+sortUIntParallelStrategiesMedian3or5ST = sortInplaceFM defaultParStrategies (Median3or5 @Int64)
 

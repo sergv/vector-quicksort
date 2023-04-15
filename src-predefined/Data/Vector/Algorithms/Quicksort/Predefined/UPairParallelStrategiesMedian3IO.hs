@@ -19,5 +19,5 @@ import Data.Vector.Algorithms.Quicksort.Predefined.UPairSequentialMedian3IO ()
 
 {-# NOINLINE sortUPairParallelStrategiesMedian3IO #-}
 sortUPairParallelStrategiesMedian3IO :: U.MVector RealWorld (TestPair Int32 Int32) -> IO ()
-sortUPairParallelStrategiesMedian3IO = sortInplaceFM ParStrategies (Median3 @(TestPair Int32 Int32))
+sortUPairParallelStrategiesMedian3IO = sortInplaceFM defaultParStrategies (Median3 @(TestPair Int32 Int32))
 

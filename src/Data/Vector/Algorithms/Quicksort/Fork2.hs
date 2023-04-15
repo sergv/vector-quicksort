@@ -17,7 +17,9 @@ module Data.Vector.Algorithms.Quicksort.Fork2
 
   , Sequential(..)
   , Parallel
-  , ParStrategies(..)
+  , ParStrategies
+  , defaultParStrategies
+  , setParStrategiesCutoff
   , mkParallel
   , waitParallel
 
@@ -132,7 +134,7 @@ instance Fork2 Parallel (Bool, Bool) IO where
   fork2 !p@(Parallel jobs _) tok@(!isSeq, shouldDecrement) !depth f g !b !d
     | isSeq
     = f (True, False) b *> g tok d
-    | 2 `unsafeShiftL` depth < jobs && mn > 100 && mn * 10 > mx
+    | 2 `unsafeShiftL` depth < jobs && mn > 10_000
     = do
       addPending p
       _ <- forkIO $ f (False, True) b
@@ -146,9 +148,9 @@ instance Fork2 Parallel (Bool, Bool) IO where
       !bLen = getLength b
       !dLen = getLength d
 
-      (!mn, !mx) = if bLen < dLen then (bLen, dLen) else (dLen, bLen)
+      !mn = min bLen dLen
 
--- | Parallelise with sparks. After partitioning if sides are
+-- | Parallelise with sparks. After partitioning, if sides are
 -- sufficiently big then spark will be created to evaluate one of the
 -- parts while another will continue to be evaluated in current
 -- execution thread.
@@ -162,7 +164,15 @@ instance Fork2 Parallel (Bool, Bool) IO where
 -- thread-based parallelisation that 'Parallel' offers. These benefits
 -- allow sparks to work on much smaller chunks and exercise more
 -- parallelism.
-data ParStrategies = ParStrategies
+data ParStrategies = ParStrategies !Int
+
+-- | Parallelise with sparks for reasonably big vectors.
+defaultParStrategies :: ParStrategies
+defaultParStrategies = ParStrategies 10_000
+
+-- | Adjust length of vectors for which parallelisation wil be performed.
+setParStrategiesCutoff :: Int -> ParStrategies -> ParStrategies
+setParStrategiesCutoff n _ = ParStrategies n
 
 instance Fork2 ParStrategies () IO where
   {-# INLINE startWork #-}
@@ -181,8 +191,8 @@ instance Fork2 ParStrategies () IO where
     -> b
     -> d
     -> IO ()
-  fork2 _ _ _ f g !b !d
-    | mn > 100 && mn * 10 > mx
+  fork2 !(ParStrategies cutoff) _ _ f g !b !d
+    | mn > cutoff
     = do
       let b' = unsafePerformIO $ f () b
       d' <- b' `par` g () d
@@ -198,7 +208,6 @@ instance Fork2 ParStrategies () IO where
       !dLen = getLength d
 
       !mn = min bLen dLen
-      !mx = max bLen dLen
 
 -- | This instance is a bit surprising - ST monad, after all, doesn’t
 -- have concurrency and threads everywhere its @s@ parameter to
@@ -226,8 +235,8 @@ instance Fork2 ParStrategies () (ST s) where
     -> b
     -> d
     -> ST s ()
-  fork2 _ _ _ f g !b !d
-    | mn > 100 && mn * 10 > mx
+  fork2 !(ParStrategies cutoff) _ _ f g !b !d
+    | mn > cutoff
     = do
       b' <- unsafeInterleaveST $ f () b
       d' <- b' `par` g () d
@@ -243,7 +252,6 @@ instance Fork2 ParStrategies () (ST s) where
       !dLen = getLength d
 
       !mn = min bLen dLen
-      !mx = max bLen dLen
 
 -- | Helper that can be used to estimatae sizes of subproblems.
 --
