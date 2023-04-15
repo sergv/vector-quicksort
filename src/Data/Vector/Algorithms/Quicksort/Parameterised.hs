@@ -10,16 +10,18 @@
 -- new functions taking more arguments.
 --
 -- === Example
--- This is how you’d define parallel sort on unboxed vectors of integers:
+-- This is how you’d define parallel sort that uses sparks on unboxed vectors of integers:
 --
--- > import Control.Monad.ST
--- > import Data.Int
--- > import Data.Vector.Algorithms.Quicksort.Parameterised
--- > import Data.Vector.Unboxed qualified as U
--- >
--- > {-# NOINLINE myParallelSort #-}
--- > myParallelSort :: U.MVector s Int64 -> ST s ()
--- > myParallelSort = sortInplaceFM ParStrategies (Median3or5 @Int64)
+-- >>> import Control.Monad.ST
+-- >>> import Data.Int
+-- >>> import Data.Vector.Algorithms.Quicksort.Parameterised
+-- >>> import Data.Vector.Unboxed qualified as U
+-- >>> :{
+-- let myParallelSort :: U.MVector s Int64 -> ST s ()
+--     myParallelSort = sortInplaceFM defaultParStrategies (Median3or5 @Int64)
+-- in U.modify myParallelSort $ U.fromList @Int64 [20, 19 .. 0]
+-- :}
+-- [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]
 --
 -- === Design considerations
 -- Because of reliance on specialisation, this package doesn't provide

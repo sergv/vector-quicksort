@@ -5,6 +5,7 @@
 -- Maintainer: serg.foo@gmail.com
 --
 -- This module provides reasonable default sorting algorithm with no parallelisation.
+-- To get parallelisation please use 'Data.Vector.Algorithms.Quicksort.Parameterised'.
 --
 -- === Example
 --
@@ -103,7 +104,7 @@ sort xs = runST $ do
 -- This function takes generic mutable vectors so will work with any
 -- vectors from the @vector@ package.
 --
--- May be a good candidate for use with with 'G.modify'.
+-- Could be run on immutable vectors with 'G.modify'.
 sortInplace
   :: forall m a v.
      (PrimMonad m, Ord a, GM.MVector v a)

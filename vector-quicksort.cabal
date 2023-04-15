@@ -17,7 +17,9 @@ description:
   Good starting point:
 
   > import Data.Vector.Algorithms.Quicksort qualified as Quick
-  > -- Then call as
+
+  Then call as
+
   > Quick.sort xs
 
 copyright:

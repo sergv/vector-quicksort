@@ -71,7 +71,7 @@ data Median3 a = Median3
 -- | Pick first, last, and the middle elements, if all of them are
 -- distinct then return median of 3 like 'Median3' does, otherwise
 -- take median of 5 from the already taken 3 and extra 2 elements at
--- 1/4th and 3/4th of array length.
+-- @1/4@th and @3/4@th of array length.
 data Median3or5 a = Median3or5
 
 {-# INLINE pick3 #-}

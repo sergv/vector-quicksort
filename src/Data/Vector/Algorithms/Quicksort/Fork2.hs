@@ -4,8 +4,7 @@
 -- License:    Apache-2.0 (see LICENSE)
 -- Maintainer: serg.foo@gmail.com
 --
--- This module defines how quicksort is parallelised. The 'Fork2' class
--- is the main source of parallelisation strategies.
+-- This module defines how quicksort is parallelised using the 'Fork2' class.
 
 {-# LANGUAGE FunctionalDependencies #-}
 
@@ -15,13 +14,18 @@ module Data.Vector.Algorithms.Quicksort.Fork2
   -- * Main interface
     Fork2(..)
 
+  -- * No parallelisation
   , Sequential(..)
+
+  -- * Parallelisation with threads
   , Parallel
+  , mkParallel
+  , waitParallel
+
+  -- * Parallelisation with sparks
   , ParStrategies
   , defaultParStrategies
   , setParStrategiesCutoff
-  , mkParallel
-  , waitParallel
 
   -- * Helpers
   , HasLength
@@ -50,15 +54,19 @@ import System.IO.Unsafe
 -- - @m@ - monad the strategy operates in. Some strategies only make
 --   sense in a particular monad, e.g. parellelisation via 'forkIO'
 class Fork2 a x m | a -> x where
-  -- | Will get called by quicksort when sorting starts.
+  -- | Will get called /only once/ by quicksort when sorting starts,
+  -- returns token to be passed around. Other tokens, e.g. for new
+  -- spawned threads, are created by the strategy in the corresponding
+  -- class instance.
   startWork :: a -> m x
-  -- | Will get called by quicksort when it finishes sorting its array.
+  -- | Will get called by quicksort when it finishes sorting its array. Will receive
+  -- previously created token.
   endWork   :: a -> x -> m ()
   fork2
     :: (HasLength b, HasLength d)
     => a                -- ^ Parallelisation algorithm that can carry
                         -- extra info, e.g. for synchronization
-    -> x                -- ^ "Token" for current execution thread,
+    -> x                -- ^ Token for current execution thread,
                         -- will be passed to 'endWork' when done
     -> Int              -- ^ Recursion depth
     -> (x -> b -> m ()) -- ^ One recursive quicksort call
@@ -170,7 +178,7 @@ data ParStrategies = ParStrategies !Int
 defaultParStrategies :: ParStrategies
 defaultParStrategies = ParStrategies 10_000
 
--- | Adjust length of vectors for which parallelisation wil be performed.
+-- | Adjust length of vectors for which parallelisation will be performed.
 setParStrategiesCutoff :: Int -> ParStrategies -> ParStrategies
 setParStrategiesCutoff n _ = ParStrategies n
 

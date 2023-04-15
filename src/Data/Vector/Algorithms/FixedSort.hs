@@ -240,7 +240,11 @@ sort4 !xs = do
 -- | Sorts vectors containing strictly less that 17 elements. Otherwise does nothing.
 --
 -- Depending on GHC may be good candidate for SPECIALIZE pragma.
-bitonicSort :: forall m v a. (PrimMonad m, Ord a, GM.MVector v a) => Int -> v (PrimState m) a -> m ()
+bitonicSort
+  :: forall m v a. (PrimMonad m, Ord a, GM.MVector v a)
+  => Int               -- ^ Vector length
+  -> v (PrimState m) a -- ^ Vector to be sorted
+  -> m ()
 bitonicSort !n !v = do
   case n of
     2  ->
