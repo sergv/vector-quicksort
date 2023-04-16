@@ -4,6 +4,8 @@
 -- License:    Apache-2.0 (see LICENSE)
 -- Maintainer: serg.foo@gmail.com
 
+{-# LANGUAGE MagicHash #-}
+
 {-# OPTIONS_GHC -Wno-orphans #-}
 
 module Data.Vector.Algorithms.Quicksort.Predefined.UPairSequentialMedian3ST
@@ -13,6 +15,7 @@ module Data.Vector.Algorithms.Quicksort.Predefined.UPairSequentialMedian3ST
 import Control.Monad.ST
 import Data.Int
 import Data.Vector.Unboxed qualified as U
+import GHC.Exts (Proxy#)
 
 import Data.Vector.Algorithms.Quicksort.Parameterised
 
@@ -21,8 +24,8 @@ import Data.Vector.Algorithms.Quicksort.Predefined.Pair
 import Data.Vector.Algorithms.FixedSort
 import Data.Vector.Algorithms.Heapsort
 
-{-# SPECIALIZE heapSort    :: U.MVector s (TestPair Int32 Int32) -> ST s ()        #-}
-{-# SPECIALIZE bitonicSort :: Int -> U.MVector s (TestPair Int32 Int32) -> ST s () #-}
+{-# SPECIALIZE heapSortOn    :: Proxy# (TestPair Int32 Int32) -> U.MVector s (TestPair Int32 Int32) -> ST s ()        #-}
+{-# SPECIALIZE bitonicSortOn :: Proxy# (TestPair Int32 Int32) -> Int -> U.MVector s (TestPair Int32 Int32) -> ST s () #-}
 
 {-# NOINLINE sortUPairSequentialMedian3ST #-}
 sortUPairSequentialMedian3ST :: U.MVector s (TestPair Int32 Int32) -> ST s ()

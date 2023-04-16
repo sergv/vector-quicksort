@@ -6,33 +6,37 @@
 --
 -- Sorts for fixed number of elements. Mostly helpers for quicksort
 
+{-# LANGUAGE MagicHash #-}
+
 module Data.Vector.Algorithms.FixedSort
-  ( sort3
-  , sort4
-  , bitonicSort
+  ( sort3On
+  , sort4On
+  , bitonicSortOn
   ) where
 
 import Control.Monad hiding (forM)
 import Control.Monad.Primitive
+import Data.Coerce
 import Data.Vector.Generic.Mutable qualified as GM
+import GHC.Exts (Proxy#)
 
-{-# INLINABLE sort3 #-}
+{-# INLINABLE sort3On #-}
 -- | Sorts the elements at the three given indices. The indices are assumed
 -- to be given from lowest to highest, so if 'l < m < u' then
 -- 'sort3ByIndex cmp a m l u' essentially sorts the median of three into the
 -- lowest position in the array.
-sort3
-  :: (PrimMonad m, GM.MVector v a, Ord a)
-  => v (PrimState m) a -> m ()
-sort3 !xs = do
+sort3On
+  :: forall m v a b. (PrimMonad m, GM.MVector v a, Coercible a b, Ord b)
+  => Proxy# b -> v (PrimState m) a -> m ()
+sort3On _ !xs = do
   !x0 <- GM.unsafeRead xs 0
   !x1 <- GM.unsafeRead xs 1
   !x2 <- GM.unsafeRead xs 2
-  if x1 < x0
+  if x1 <@ x0
   then
-    if x2 < x0
+    if x2 <@ x0
     then
-      if x2 < x1
+      if x2 <@ x1
       then do
         GM.unsafeWrite xs 0 x2
         GM.unsafeWrite xs 2 x0
@@ -44,9 +48,9 @@ sort3 !xs = do
       GM.unsafeWrite xs 0 x1
       GM.unsafeWrite xs 1 x0
   else
-    if x2 < x1
+    if x2 <@ x1
     then
-      if x2 < x0
+      if x2 <@ x0
       then do
         GM.unsafeWrite xs 0 x2
         GM.unsafeWrite xs 1 x0
@@ -56,28 +60,31 @@ sort3 !xs = do
         GM.unsafeWrite xs 2 x1
     else
       pure ()
+  where
+    (<@) :: a -> a -> Bool
+    (<@) = coerce ((<) :: b -> b -> Bool)
 
-{-# INLINABLE sort4 #-}
+{-# INLINABLE sort4On #-}
 -- | Sorts the elements at the four given indices. Like the 2 and 3 element
 -- versions, this assumes that the indices are given in increasing order, so
 -- it can be used to sort medians into particular positions and so on.
-sort4
-  :: (PrimMonad m, GM.MVector v a, Ord a)
-  => v (PrimState m) a -> m ()
-sort4 !xs = do
+sort4On
+  :: forall m v a b. (PrimMonad m, GM.MVector v a, Coercible a b, Ord b)
+  => Proxy# b -> v (PrimState m) a -> m ()
+sort4On _ !xs = do
   !x0 <- GM.unsafeRead xs 0
   !x1 <- GM.unsafeRead xs 1
   !x2 <- GM.unsafeRead xs 2
   !x3 <- GM.unsafeRead xs 3
-  if x1 < x0
+  if x1 <@ x0
   then
-    if x2 < x0
+    if x2 <@ x0
     then
-      if x2 < x1
+      if x2 <@ x1
       then
-        if x3 < x1
+        if x3 <@ x1
         then
-          if x3 < x2
+          if x3 <@ x2
           then do
             GM.unsafeWrite xs 0 x3
             GM.unsafeWrite xs 1 x2
@@ -89,7 +96,7 @@ sort4 !xs = do
             GM.unsafeWrite xs 2 x1
             GM.unsafeWrite xs 3 x0
         else
-          if x3 < x0
+          if x3 <@ x0
           then do
             GM.unsafeWrite xs 0 x2
             -- GM.unsafeWrite xs 1 x1
@@ -101,9 +108,9 @@ sort4 !xs = do
             GM.unsafeWrite xs 2 x0
             GM.unsafeWrite xs 3 x3
       else
-        if x3 < x2
+        if x3 <@ x2
         then
-          if x3 < x1
+          if x3 <@ x1
           then do
             GM.unsafeWrite xs 0 x3
             -- GM.unsafeWrite xs 1 x1
@@ -115,7 +122,7 @@ sort4 !xs = do
             GM.unsafeWrite xs 2 x2
             GM.unsafeWrite xs 3 x0
         else
-          if x3 < x0
+          if x3 <@ x0
           then do
             GM.unsafeWrite xs 0 x1
             GM.unsafeWrite xs 1 x2
@@ -127,9 +134,9 @@ sort4 !xs = do
             GM.unsafeWrite xs 2 x0
             -- GM.unsafeWrite xs 3 x3
     else
-      if x3 < x0
+      if x3 <@ x0
       then
-        if x3 < x1
+        if x3 <@ x1
         then do
           GM.unsafeWrite xs 0 x3
           -- GM.unsafeWrite xs 1 x1
@@ -141,7 +148,7 @@ sort4 !xs = do
           GM.unsafeWrite xs 2 x0
           GM.unsafeWrite xs 3 x2
       else
-        if x3 < x2
+        if x3 <@ x2
         then do
           GM.unsafeWrite xs 0 x1
           GM.unsafeWrite xs 1 x0
@@ -153,13 +160,13 @@ sort4 !xs = do
           -- GM.unsafeWrite xs 2 x2
           -- GM.unsafeWrite xs 3 x3
   else
-    if x2 < x1
+    if x2 <@ x1
     then
-      if x2 < x0
+      if x2 <@ x0
       then
-        if x3 < x0
+        if x3 <@ x0
         then
-          if x3 < x2
+          if x3 <@ x2
           then do
             GM.unsafeWrite xs 0 x3
             GM.unsafeWrite xs 1 x2
@@ -171,7 +178,7 @@ sort4 !xs = do
             GM.unsafeWrite xs 2 x0
             GM.unsafeWrite xs 3 x1
         else
-          if x3 < x1
+          if x3 <@ x1
           then do
             GM.unsafeWrite xs 0 x2
             GM.unsafeWrite xs 1 x0
@@ -183,9 +190,9 @@ sort4 !xs = do
             GM.unsafeWrite xs 2 x1
             -- GM.unsafeWrite xs 3 x3
       else
-        if x3 < x2
+        if x3 <@ x2
         then
-          if x3 < x0
+          if x3 <@ x0
           then do
             GM.unsafeWrite xs 0 x3
             GM.unsafeWrite xs 1 x0
@@ -197,7 +204,7 @@ sort4 !xs = do
             -- GM.unsafeWrite xs 2 x2
             GM.unsafeWrite xs 3 x1
         else
-          if x3 < x1
+          if x3 <@ x1
           then do
             -- GM.unsafeWrite xs 0 x0
             GM.unsafeWrite xs 1 x2
@@ -209,9 +216,9 @@ sort4 !xs = do
             GM.unsafeWrite xs 2 x1
             -- GM.unsafeWrite xs 3 x3
     else
-      if x3 < x1
+      if x3 <@ x1
       then
-        if x3 < x0
+        if x3 <@ x0
         then do
           GM.unsafeWrite xs 0 x3
           GM.unsafeWrite xs 1 x0
@@ -223,7 +230,7 @@ sort4 !xs = do
           GM.unsafeWrite xs 2 x1
           GM.unsafeWrite xs 3 x2
       else
-        if x3 < x2
+        if x3 <@ x2
         then do
           -- GM.unsafeWrite xs 0 x0
           -- GM.unsafeWrite xs 1 x1
@@ -235,17 +242,21 @@ sort4 !xs = do
           -- GM.unsafeWrite xs 2 x2
           -- GM.unsafeWrite xs 3 x3
           pure ()
+  where
+    (<@) :: a -> a -> Bool
+    (<@) = coerce ((<) :: b -> b -> Bool)
 
-{-# INLINABLE bitonicSort #-}
+{-# INLINABLE bitonicSortOn #-}
 -- | Sorts vectors containing strictly less that 17 elements. Otherwise does nothing.
 --
 -- Depending on GHC may be good candidate for SPECIALIZE pragma.
-bitonicSort
-  :: forall m v a. (PrimMonad m, Ord a, GM.MVector v a)
-  => Int               -- ^ Vector length
+bitonicSortOn
+  :: forall m v a b. (PrimMonad m, GM.MVector v a, Coercible a b, Ord b)
+  => Proxy# b
+  -> Int               -- ^ Vector length
   -> v (PrimState m) a -- ^ Vector to be sorted
   -> m ()
-bitonicSort !n !v = do
+bitonicSortOn p !n !v = do
   case n of
     2  ->
       swap 0 1
@@ -253,14 +264,14 @@ bitonicSort !n !v = do
       -- swap 1 2
       -- swap 0 2
       -- swap 0 1
-      sort3 v
+      sort3On p v
     4  ->
       -- swap 0 1
       -- swap 2 3
       -- swap 0 2
       -- swap 1 3
       -- swap 1 2
-      sort4 v
+      sort4On p v
     5  -> do
       swap 0 1
       swap 3 4
@@ -676,6 +687,10 @@ bitonicSort !n !v = do
     swap !i !j = do
       !x <- GM.unsafeRead v i
       !y <- GM.unsafeRead v j
-      when (y < x) $ do
+      when (y <@ x) $ do
         GM.unsafeWrite v i y
         GM.unsafeWrite v j x
+
+    (<@) :: a -> a -> Bool
+    (<@) = coerce ((<) :: b -> b -> Bool)
+

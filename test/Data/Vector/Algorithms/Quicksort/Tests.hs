@@ -237,7 +237,7 @@ sortProps = setTestCount $ testGroup "sort does not lose items"
         (items, isSorted) = checkIsSorted (snd . toTuple) sorted
         sorted, unsorted :: [TestPair Int32 Int32]
         sorted                = runST $ runSort @w doSort unsorted
-        unsorted              = zipWith TestPair xs [0..]
+        unsorted              = map TestPair $ zip xs [0..]
 
     sortsAndDoesNotLoseItemsIO
       :: forall w v. (G.Vector w (TestPair Int32 Int32), v ~ G.Mutable w)
@@ -251,7 +251,7 @@ sortProps = setTestCount $ testGroup "sort does not lose items"
       pure $
         isSorted .&&. items === S.fromList (map (snd . toTuple) unsorted)
       where
-        unsorted = zipWith TestPair xs [0..]
+        unsorted = map TestPair $ zip xs [0..]
 
     sortsAndDoesNotLoseItemsSTtoIO
       :: forall w v. (G.Vector w (TestPair Int32 Int32), v ~ G.Mutable w)
@@ -265,7 +265,7 @@ sortProps = setTestCount $ testGroup "sort does not lose items"
       pure $
         isSorted .&&. items === S.fromList (map (snd . toTuple) unsorted)
       where
-        unsorted = zipWith TestPair xs [0..]
+        unsorted = map TestPair $ zip xs [0..]
 
 sortTestsST :: TestTree
 sortTestsST = setTestCount $ testGroup "sort tests in ST"

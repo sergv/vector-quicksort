@@ -43,6 +43,7 @@
 -- with @-fspecialise-aggressively@ flag or by using via @SPECIALIZE@
 -- pragmas, like so:
 --
+-- > {-# LANGUAGE MagicHash #-}
 -- > -- Either use the flag to specialize everything, ...
 -- > {-# OPTIONS_GHC -fspecialise-aggressively #-}
 -- >
@@ -51,39 +52,49 @@
 -- > import Data.Vector.Algorithms.Heapsort
 -- > import Data.Vector.Algorithms.Quicksort
 -- > import Data.Vector.Unboxed qualified as U
+-- > import GHC.Exts (Proxy#)
 -- >
 -- > -- If sorting in ST
 -- > -- These are fallback sorts and their performance is important
--- > {-# SPECIALIZE heapSort    :: U.MVector s Int -> ST s ()        #-}
--- > {-# SPECIALIZE bitonicSort :: Int -> U.MVector s Int -> ST s () #-}
+-- > {-# SPECIALIZE heapSortOn    :: Proxy# Int -> U.MVector s Int -> ST s ()        #-}
+-- > {-# SPECIALIZE bitonicSortOn :: Proxy# Int -> Int -> U.MVector s Int -> ST s () #-}
 -- > -- Main sort entry point
--- > {-# SPECIALIZE sort        :: U.MVector s Int -> ST s ()        #-}
+-- > {-# SPECIALIZE sort          :: U.MVector s Int -> ST s ()                      #-}
 -- >
 -- > -- If sorting in IO
--- > {-# SPECIALIZE heapSort    :: U.MVector RealWorld Int -> IO ()        #-}
--- > {-# SPECIALIZE bitonicSort :: Int -> U.MVector RealWorld Int -> IO () #-}
--- > {-# SPECIALIZE sort        :: U.MVector RealWorld Int -> IO ()        #-}
+-- > {-# SPECIALIZE heapSortOn    :: Proxy# Int -> U.MVector RealWorld Int -> IO ()        #-}
+-- > {-# SPECIALIZE bitonicSortOn :: Proxy# Int -> Int -> U.MVector RealWorld Int -> IO () #-}
+-- > {-# SPECIALIZE sort          :: U.MVector RealWorld Int -> IO ()                      #-}
 
 {-# OPTIONS_GHC -Wno-orphans #-}
 
 module Data.Vector.Algorithms.Quicksort
   ( sort
+  , sortOn
   , sortInplace
+  , sortInplaceOn
   ) where
 
 import Prelude hiding (last, pi)
 
 import Control.Monad.Primitive
 import Control.Monad.ST
+import Data.Coerce
+import Data.Proxy
 import Data.Vector.Generic qualified as G
 import Data.Vector.Generic.Mutable qualified as GM
 
 import Data.Vector.Algorithms.Quicksort.Parameterised
 
 {-# SPECIALIZE sortInplaceFM
-  :: (PrimMonad m, Ord a, GM.MVector v a) => Sequential -> Median3or5 a -> v (PrimState m) a -> m () #-}
+  :: (PrimMonad m, Ord a, GM.MVector v a)
+  => Sequential
+  -> Median3or5 a
+  -> v (PrimState m) a
+  -> m ()
+  #-}
 
-{-# INLINABLE sort #-}
+{-# INLINE sort #-}
 -- | Good default sort. Returns sorted copy.
 --
 -- This function takes generic vectors so will work with any vectors
@@ -98,8 +109,8 @@ sort xs = runST $ do
   sortInplaceFM Sequential (Median3or5 @a) ys
   G.unsafeFreeze ys
 
-{-# INLINABLE sortInplace #-}
--- | Good default sort for mutable vectors.
+{-# INLINE sortInplace #-}
+-- | Good default sort for mutable vectors. Mutates input vector.
 --
 -- This function takes generic mutable vectors so will work with any
 -- vectors from the @vector@ package.
@@ -111,3 +122,53 @@ sortInplace
   => v (PrimState m) a
   -> m ()
 sortInplace = sortInplaceFM Sequential (Median3or5 @a)
+
+{-# SPECIALIZE sortInplaceFMOn
+  :: (PrimMonad m, GM.MVector v a, Coercible a b, Ord b)
+  => Proxy b
+  -> Sequential
+  -> Median3or5 b
+  -> v (PrimState m) a
+  -> m ()
+  #-}
+
+{-# INLINE sortOn #-}
+-- | Good default sort with custom comparison predicate. Returns sorted copy.
+--
+-- The comparison predicate is determined by the proxy argument that
+-- specifies the type that actual vector elements will be cast to
+-- using zero-cost coercions before comparing.
+--
+-- This function takes generic vectors so will work with any vectors
+-- from the @vector@ package.
+sortOn
+  :: forall v a b.
+     (G.Vector v a, Coercible a b, Ord b)
+  => Proxy b
+  -> v a
+  -> v a
+sortOn p xs = runST $ do
+  ys <- G.thaw xs
+  sortInplaceFMOn p Sequential (Median3or5 @b) ys
+  G.unsafeFreeze ys
+
+{-# INLINE sortInplaceOn #-}
+-- | Good default sort for mutable vectors with custom comparison
+-- predicate. Mutates input vector.
+--
+-- The comparison predicate is determined by the proxy argument that
+-- specifies the type that actual vector elements will be cast to
+-- using zero-cost coercions before comparing.
+--
+-- This function takes generic mutable vectors so will work with any
+-- vectors from the @vector@ package.
+--
+-- Could be run on immutable vectors with 'G.modify'.
+sortInplaceOn
+  :: forall m v a b.
+     (PrimMonad m, GM.MVector v a, Coercible a b, Ord b)
+  => Proxy b
+  -> v (PrimState m) a
+  -> m ()
+sortInplaceOn p = sortInplaceFMOn p Sequential (Median3or5 @b)
+

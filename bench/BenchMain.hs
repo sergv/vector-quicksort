@@ -6,6 +6,7 @@
 
 {-# LANGUAGE CPP                      #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE MagicHash                #-}
 {-# LANGUAGE OverloadedStrings        #-}
 {-# LANGUAGE PatternSynonyms          #-}
 {-# LANGUAGE QuantifiedConstraints    #-}
@@ -34,6 +35,7 @@ import Data.Vector.Primitive.Mutable qualified as PM
 import Data.Vector.Storable qualified as S
 import Data.Vector.Storable.Mutable qualified as SM
 import Foreign.C.Types
+import GHC.Exts (proxy#)
 import System.Random.Stateful
 
 import Test.Tasty.Bench
@@ -152,7 +154,7 @@ vectorAlgoHeapsortInt64 xs = do
 fallbackHeapsortInt64 :: P.Vector Int64 -> ST s (PM.MVector s Int64)
 fallbackHeapsortInt64 xs = do
   ys <- P.thaw xs
-  Heapsort.heapSort ys
+  Heapsort.heapSortOn (proxy# @Int64) ys
   pure ys
 
 {-# NOINLINE cppUnboxedInt64 #-}

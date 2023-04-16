@@ -4,6 +4,8 @@
 -- License:    Apache-2.0 (see LICENSE)
 -- Maintainer: serg.foo@gmail.com
 
+{-# LANGUAGE MagicHash #-}
+
 {-# OPTIONS_GHC -Wno-orphans #-}
 
 module Data.Vector.Algorithms.Quicksort.Predefined.VIntSequentialMedian3IO
@@ -13,14 +15,15 @@ module Data.Vector.Algorithms.Quicksort.Predefined.VIntSequentialMedian3IO
 import Control.Monad.ST
 import Data.Int
 import Data.Vector qualified as V
+import GHC.Exts (Proxy#)
 
 import Data.Vector.Algorithms.Quicksort.Parameterised
 
 import Data.Vector.Algorithms.FixedSort
 import Data.Vector.Algorithms.Heapsort
 
-{-# SPECIALIZE heapSort    :: V.MVector RealWorld Int64 -> IO ()        #-}
-{-# SPECIALIZE bitonicSort :: Int -> V.MVector RealWorld Int64 -> IO () #-}
+{-# SPECIALIZE heapSortOn    :: Proxy# Int64 -> V.MVector RealWorld Int64 -> IO ()        #-}
+{-# SPECIALIZE bitonicSortOn :: Proxy# Int64 -> Int -> V.MVector RealWorld Int64 -> IO () #-}
 
 {-# NOINLINE sortVIntSequentialMedian3IO #-}
 sortVIntSequentialMedian3IO :: V.MVector RealWorld Int64 -> IO ()

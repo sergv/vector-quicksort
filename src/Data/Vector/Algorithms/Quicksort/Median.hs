@@ -20,9 +20,11 @@ import Prelude hiding (last)
 
 import Control.Monad.Primitive
 import Data.Bits
+import Data.Coerce
 import Data.Function
 import Data.Kind (Type)
 import Data.Vector.Generic.Mutable qualified as GM
+import GHC.Exts (Proxy#, proxy#)
 
 -- | Median selection result.
 data MedianResult a
@@ -51,18 +53,22 @@ existingValue (CmpFst (x, n)) = ExistingValue x n
 -- to select median at random and need to thread random gen.
 --
 -- Parameter meaning;
--- - @a@ - the median parameter we're defining instance for
--- - @b@ - type of ellements this median selection method is applicable to
--- - @m@ - monad the median selection operates in
--- - @s@ - the same ‘index’ as in ‘ST s’ because vector to be sorted is parameterised and @m@ may need to mention it
-class Median (a :: Type) (b :: Type) (m :: Type -> Type) (s :: Type) | a -> b, m -> s where
-  -- | Come up with a median value of a given array
-  selectMedian
-    :: (GM.MVector v b, Ord b)
-    => a     -- ^ Median algorithm than can carry extra info to be
+-- - @med@ - the median parameter we're defining instance for
+-- - @b@   - type of elements this median selection method is applicable to
+-- - @m@   - monad the median selection operates in
+-- - @s@   - the same ‘index’ as in ‘ST s’ because vector to be sorted is parameterised and @m@ may need to mention it
+class Median (med :: Type) (b :: Type) (m :: Type -> Type) (s :: Type) | med -> b, m -> s where
+  -- | Come up with a median value of a given vector using custom comparison.
+  --
+  -- The vector contains elements of type @a@ but comparisons will
+  -- take place over type @b@ selected by corresponding proxy argument
+  -- and obtained by zero-cost coercion from @a@.
+  selectMedianOn
+    :: forall v a. (GM.MVector v a, Coercible a b, Ord b)
+    => med   -- ^ Median algorithm than can carry extra info to be
              -- used during median selection (e.g. random generator)
-    -> v s b -- ^ Array
-    -> m (MedianResult b)
+    -> v s a -- ^ Input vector
+    -> m (MedianResult a)
 
 -- | Pick first, last, and the middle elements and find the one that's between the other two, e.g.
 -- given elements @a@, @b@, and @c@ find @y@ among them that satisfies @x <= y <= z@.
@@ -76,14 +82,14 @@ data Median3or5 a = Median3or5
 
 {-# INLINE pick3 #-}
 -- Pick median among 3 values.
-pick3 :: Ord a => a -> a -> a -> a
-pick3 a b c =
-  if b < a
+pick3 :: forall a b. (Coercible a b, Ord b) => Proxy# b -> a -> a -> a -> a
+pick3 _ a b c =
+  if b <@ a
   then
     -- ... b < a ...
-    if c < a
+    if c <@ a
     then
-      if c < b
+      if c <@ b
       then
         -- c < b < a
         b
@@ -95,9 +101,9 @@ pick3 a b c =
       a
   else
     -- ... a <= b ...
-    if c < b
+    if c <@ b
     then
-      if c < a
+      if c <@ a
       then
         -- c < a <= b
         a
@@ -107,17 +113,20 @@ pick3 a b c =
     else
       -- a <= b <= c
       b
+  where
+    (<@) :: a -> a -> Bool
+    (<@) = coerce ((<) :: b -> b -> Bool)
 
 {-# INLINE sort3 #-}
 -- Establish sortered order among 3 values.
-sort3 :: Ord a => a -> a -> a -> (a, a, a)
-sort3 a b c =
-  if b < a
+sort3 :: forall a b. (Coercible a b, Ord b) => Proxy# b -> a -> a -> a -> (a, a, a)
+sort3 _ a b c =
+  if b <@ a
   then
     -- ... b < a ...
-    if c < a
+    if c <@ a
     then
-      if c < b
+      if c <@ b
       then
         -- c < b < a
         (c, b, a)
@@ -129,9 +138,9 @@ sort3 a b c =
       (b, a, c)
   else
     -- ... a <= b ...
-    if c < b
+    if c <@ b
     then
-      if c < a
+      if c <@ a
       then
         -- c < a <= b
         (c, a, b)
@@ -141,6 +150,9 @@ sort3 a b c =
     else
       -- a <= b <= c
       (a, b, c)
+  where
+    (<@) :: a -> a -> Bool
+    (<@) = coerce ((<) :: b -> b -> Bool)
 
 newtype CmpFst a b = CmpFst { unCmpFst :: (a, b) }
 
@@ -154,48 +166,49 @@ instance Ord a => Ord (CmpFst a b) where
 readAt :: (PrimMonad m, GM.MVector v a) => v (PrimState m) a -> Int -> m (CmpFst a Int)
 readAt xs n = (\x -> CmpFst (x, n)) <$> GM.unsafeRead xs n
 
-instance (PrimMonad m, s ~ PrimState m) => Median (Median3 a) a m s where
-  {-# INLINE selectMedian #-}
-  selectMedian
-    :: forall (v :: Type -> Type -> Type).
-       (GM.MVector v a, Ord a)
-    => Median3 a
+instance (PrimMonad m, s ~ PrimState m) => Median (Median3 b) b m s where
+  {-# INLINE selectMedianOn #-}
+  selectMedianOn
+    :: forall (v :: Type -> Type -> Type) a.
+       (GM.MVector v a, Coercible a b, Ord b)
+    => Median3 b
     -> v s a
     -> m (MedianResult a)
-  selectMedian _ !v = do
+  selectMedianOn _ !v = do
     let len :: Int
         !len = GM.length v
         pi0, pi1, pi2 :: Int
         !pi0  = 0
         !pi1  = halve len
         !pi2  = len - 1
-    !pv0 <- readAt v pi0
-    !pv1 <- readAt v pi1
-    !pv2 <- readAt v pi2
-    pure $! existingValue $ pick3 pv0 pv1 pv2
+    (!pv0 :: CmpFst a Int) <- readAt v pi0
+    !pv1                   <- readAt v pi1
+    !pv2                   <- readAt v pi2
+    pure $! existingValue $ pick3 (proxy# @(CmpFst b Int)) pv0 pv1 pv2
 
-instance (PrimMonad m, s ~ PrimState m) => Median (Median3or5 a) a m s where
-  {-# INLINE selectMedian #-}
-  selectMedian
-    :: forall (v :: Type -> Type -> Type).
-       (GM.MVector v a, Ord a)
-    => Median3or5 a
+instance (PrimMonad m, s ~ PrimState m) => Median (Median3or5 b) b m s where
+  {-# INLINE selectMedianOn #-}
+  selectMedianOn
+    :: forall (v :: Type -> Type -> Type) a.
+       (GM.MVector v a, Coercible a b, Ord b)
+    => Median3or5 b
     -> v s a
     -> m (MedianResult a)
-  selectMedian _ !v = do
+  selectMedianOn _ !v = do
     let len :: Int
         !len = GM.length v
         pi0, pi1, pi2 :: Int
         !pi0  = 0
         !pi1  = halve len
         !pi2  = len - 1
-    !pv0 <- readAt v pi0
-    !pv1 <- readAt v pi1
-    !pv2 <- readAt v pi2
+
+    (!pv0 :: CmpFst a Int) <- readAt v pi0
+    !pv1                   <- readAt v pi1
+    !pv2                   <- readAt v pi2
 
     -- If median of 3 has chances to be good enough
-    if pv0 /= pv1 && pv1 /= pv2 && pv2 /= pv0
-    then pure $! existingValue $ pick3 pv0 pv1 pv2
+    if pv0 /=@ pv1 && pv1 /=@ pv2 && pv2 /=@ pv0
+    then pure $! existingValue $ pick3 (proxy# @(CmpFst b Int)) pv0 pv1 pv2
     else do
       let pi01, pi12 :: Int
           !pi01 = halve pi1
@@ -204,17 +217,23 @@ instance (PrimMonad m, s ~ PrimState m) => Median (Median3or5 a) a m s where
       !pv01 <- readAt v pi01
       !pv12 <- readAt v pi12
 
-      let (!mn, !med, !mx) = sort3 pv0 pv1 pv2
+      let (!mn, !med, !mx) = sort3 (proxy# @(CmpFst b Int)) pv0 pv1 pv2
           (!mn', !mx')
-            | pv01 < pv12 = (pv01, pv12)
-            | otherwise   = (pv12, pv01)
+            | pv01 <@ pv12 = (pv01, pv12)
+            | otherwise    = (pv12, pv01)
 
           !med'
-            | mn' > mx  = mx
-            | mx' < mn  = mn
-            | otherwise = pick3 mn' med mx'
+            | mx  <@ mn' = mx
+            | mx' <@ mn  = mn
+            | otherwise  = pick3 (proxy# @(CmpFst b Int)) mn' med mx'
 
       pure $! existingValue med'
+    where
+      (/=@) :: CmpFst a Int -> CmpFst a Int -> Bool
+      (/=@) = coerce ((/=) :: CmpFst b Int -> CmpFst b Int -> Bool)
+
+      (<@) :: CmpFst a Int -> CmpFst a Int -> Bool
+      (<@) = coerce ((<) :: CmpFst b Int -> CmpFst b Int -> Bool)
 
 {-# INLINE halve #-}
 halve :: Int -> Int
