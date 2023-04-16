@@ -8,6 +8,8 @@
 
 {-# OPTIONS_GHC -Wno-orphans #-}
 
+{-# OPTIONS_GHC -O2 -ddump-simpl -dsuppress-uniques -dsuppress-idinfo -dsuppress-module-prefixes -dsuppress-type-applications -dsuppress-coercions -dppr-cols200 -dsuppress-type-signatures -ddump-to-file #-}
+
 module Data.Vector.Algorithms.Quicksort.Predefined.PIntSequentialMedian3ST
   ( sortPIntSequentialMedian3ST
   ) where

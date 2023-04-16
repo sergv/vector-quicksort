@@ -59,6 +59,7 @@ common ghc-options
 
   ghc-options:
     -O2
+    -fspecialise-aggressively
     -Weverything
     -Wno-all-missed-specialisations
     -Wno-implicit-prelude
@@ -277,3 +278,31 @@ benchmark bench
     -threaded
     "-with-rtsopts=-N -A16m -n1m -qg -qb"
     -main-is BenchmarkMain
+
+executable quicksort-runner
+  import: ghc-options
+  main-is:
+    exe/QuicksortRunner.hs
+  hs-source-dirs:
+    .
+    exe
+  build-depends:
+    , async > 2
+    , base >= 4.14
+    , bytestring
+    , clock
+    , deepseq
+    , filepath
+    , optparse-applicative
+    , prettyprinter
+    , prettyprinter-combinators
+    , store
+    , vector
+    , vector-quicksort
+    , vector-quicksort-predefined
+  ghc-options:
+    -rtsopts
+    -threaded
+    "-with-rtsopts=-N -A16m -n1m -qg -qb"
+    -main-is QuicksortRunner
+
