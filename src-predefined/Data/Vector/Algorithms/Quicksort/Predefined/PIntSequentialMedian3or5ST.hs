@@ -19,13 +19,13 @@ import Data.Vector.Algorithms.Quicksort.Parameterised
 
 import Data.Vector.Algorithms.Quicksort.Predefined.PIntSequentialMedian3ST ()
 
-{-# SPECIALIZE sortInplaceFMOn
-  :: Proxy Int64
-  -> Sequential
-  -> Median3or5 Int64
-  -> P.MVector s Int64
-  -> ST s ()
-  #-}
+-- {-# SPECIALIZE sortInplaceFMOn
+--   :: Proxy Int64
+--   -> Sequential
+--   -> Median3or5 Int64
+--   -> P.MVector s Int64
+--   -> ST s ()
+--   #-}
 
 {-# NOINLINE sortPIntSequentialMedian3or5ST #-}
 sortPIntSequentialMedian3or5ST :: P.MVector s Int64 -> ST s ()

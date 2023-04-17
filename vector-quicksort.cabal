@@ -106,73 +106,73 @@ library vector-quicksort-predefined
 
     Data.Vector.Algorithms.Quicksort.Predefined.BitonicIntST
 
-    Data.Vector.Algorithms.Quicksort.Predefined.PIntParallelMedian3IO
-    Data.Vector.Algorithms.Quicksort.Predefined.PIntParallelMedian3or5IO
+    -- Data.Vector.Algorithms.Quicksort.Predefined.PIntParallelMedian3IO
+    -- Data.Vector.Algorithms.Quicksort.Predefined.PIntParallelMedian3or5IO
 
     Data.Vector.Algorithms.Quicksort.Predefined.PIntSequentialMedian3ST
-    Data.Vector.Algorithms.Quicksort.Predefined.PIntSequentialMedian3IO
-    Data.Vector.Algorithms.Quicksort.Predefined.PIntParallelStrategiesMedian3ST
-    Data.Vector.Algorithms.Quicksort.Predefined.PIntParallelStrategiesMedian3IO
+    -- Data.Vector.Algorithms.Quicksort.Predefined.PIntSequentialMedian3IO
+    -- Data.Vector.Algorithms.Quicksort.Predefined.PIntParallelStrategiesMedian3ST
+    -- Data.Vector.Algorithms.Quicksort.Predefined.PIntParallelStrategiesMedian3IO
     Data.Vector.Algorithms.Quicksort.Predefined.PIntSequentialMedian3or5ST
-    Data.Vector.Algorithms.Quicksort.Predefined.PIntSequentialMedian3or5IO
-    Data.Vector.Algorithms.Quicksort.Predefined.PIntParallelStrategiesMedian3or5ST
-    Data.Vector.Algorithms.Quicksort.Predefined.PIntParallelStrategiesMedian3or5IO
-
-    Data.Vector.Algorithms.Quicksort.Predefined.PIntSequentialAveragingMedianST
-    Data.Vector.Algorithms.Quicksort.Predefined.UPairSequentialAveragingMedianST
-
-    Data.Vector.Algorithms.Quicksort.Predefined.VIntSequentialMedian3ST
-    Data.Vector.Algorithms.Quicksort.Predefined.VIntSequentialMedian3IO
-    Data.Vector.Algorithms.Quicksort.Predefined.VPairSequentialMedian3ST
-    Data.Vector.Algorithms.Quicksort.Predefined.VPairSequentialMedian3IO
-    Data.Vector.Algorithms.Quicksort.Predefined.VIntParallelStrategiesMedian3ST
-    Data.Vector.Algorithms.Quicksort.Predefined.VIntParallelStrategiesMedian3IO
-    Data.Vector.Algorithms.Quicksort.Predefined.VPairParallelStrategiesMedian3ST
-    Data.Vector.Algorithms.Quicksort.Predefined.VPairParallelStrategiesMedian3IO
-
-    Data.Vector.Algorithms.Quicksort.Predefined.VIntSequentialMedian3or5ST
-    Data.Vector.Algorithms.Quicksort.Predefined.VIntSequentialMedian3or5IO
-    Data.Vector.Algorithms.Quicksort.Predefined.VPairSequentialMedian3or5ST
-    Data.Vector.Algorithms.Quicksort.Predefined.VPairSequentialMedian3or5IO
-    Data.Vector.Algorithms.Quicksort.Predefined.VIntParallelStrategiesMedian3or5ST
-    Data.Vector.Algorithms.Quicksort.Predefined.VIntParallelStrategiesMedian3or5IO
-    Data.Vector.Algorithms.Quicksort.Predefined.VPairParallelStrategiesMedian3or5ST
-    Data.Vector.Algorithms.Quicksort.Predefined.VPairParallelStrategiesMedian3or5IO
-
-    Data.Vector.Algorithms.Quicksort.Predefined.UIntSequentialMedian3ST
-    Data.Vector.Algorithms.Quicksort.Predefined.UIntSequentialMedian3IO
-    Data.Vector.Algorithms.Quicksort.Predefined.UPairSequentialMedian3ST
-    Data.Vector.Algorithms.Quicksort.Predefined.UPairSequentialMedian3IO
-    Data.Vector.Algorithms.Quicksort.Predefined.UIntParallelStrategiesMedian3ST
-    Data.Vector.Algorithms.Quicksort.Predefined.UIntParallelStrategiesMedian3IO
-    Data.Vector.Algorithms.Quicksort.Predefined.UPairParallelStrategiesMedian3ST
-    Data.Vector.Algorithms.Quicksort.Predefined.UPairParallelStrategiesMedian3IO
-
-    Data.Vector.Algorithms.Quicksort.Predefined.UIntSequentialMedian3or5ST
-    Data.Vector.Algorithms.Quicksort.Predefined.UIntSequentialMedian3or5IO
-    Data.Vector.Algorithms.Quicksort.Predefined.UPairSequentialMedian3or5ST
-    Data.Vector.Algorithms.Quicksort.Predefined.UPairSequentialMedian3or5IO
-    Data.Vector.Algorithms.Quicksort.Predefined.UIntParallelStrategiesMedian3or5ST
-    Data.Vector.Algorithms.Quicksort.Predefined.UIntParallelStrategiesMedian3or5IO
-    Data.Vector.Algorithms.Quicksort.Predefined.UPairParallelStrategiesMedian3or5ST
-    Data.Vector.Algorithms.Quicksort.Predefined.UPairParallelStrategiesMedian3or5IO
-
-    Data.Vector.Algorithms.Quicksort.Predefined.VTupleSequentialMedian3ST
-    Data.Vector.Algorithms.Quicksort.Predefined.VTupleSequentialMedian3IO
-    Data.Vector.Algorithms.Quicksort.Predefined.VTupleParallelStrategiesMedian3ST
-    Data.Vector.Algorithms.Quicksort.Predefined.VTupleParallelStrategiesMedian3IO
-    Data.Vector.Algorithms.Quicksort.Predefined.VTupleSequentialMedian3or5ST
-    Data.Vector.Algorithms.Quicksort.Predefined.VTupleSequentialMedian3or5IO
-    Data.Vector.Algorithms.Quicksort.Predefined.VTupleParallelStrategiesMedian3or5ST
-    Data.Vector.Algorithms.Quicksort.Predefined.VTupleParallelStrategiesMedian3or5IO
-    Data.Vector.Algorithms.Quicksort.Predefined.UTupleSequentialMedian3ST
-    Data.Vector.Algorithms.Quicksort.Predefined.UTupleSequentialMedian3IO
-    Data.Vector.Algorithms.Quicksort.Predefined.UTupleParallelStrategiesMedian3ST
-    Data.Vector.Algorithms.Quicksort.Predefined.UTupleParallelStrategiesMedian3IO
-    Data.Vector.Algorithms.Quicksort.Predefined.UTupleSequentialMedian3or5ST
-    Data.Vector.Algorithms.Quicksort.Predefined.UTupleSequentialMedian3or5IO
-    Data.Vector.Algorithms.Quicksort.Predefined.UTupleParallelStrategiesMedian3or5ST
-    Data.Vector.Algorithms.Quicksort.Predefined.UTupleParallelStrategiesMedian3or5IO
+    -- Data.Vector.Algorithms.Quicksort.Predefined.PIntSequentialMedian3or5IO
+    -- Data.Vector.Algorithms.Quicksort.Predefined.PIntParallelStrategiesMedian3or5ST
+    -- Data.Vector.Algorithms.Quicksort.Predefined.PIntParallelStrategiesMedian3or5IO
+    --
+    -- Data.Vector.Algorithms.Quicksort.Predefined.PIntSequentialAveragingMedianST
+    -- Data.Vector.Algorithms.Quicksort.Predefined.UPairSequentialAveragingMedianST
+    --
+    -- Data.Vector.Algorithms.Quicksort.Predefined.VIntSequentialMedian3ST
+    -- Data.Vector.Algorithms.Quicksort.Predefined.VIntSequentialMedian3IO
+    -- Data.Vector.Algorithms.Quicksort.Predefined.VPairSequentialMedian3ST
+    -- Data.Vector.Algorithms.Quicksort.Predefined.VPairSequentialMedian3IO
+    -- Data.Vector.Algorithms.Quicksort.Predefined.VIntParallelStrategiesMedian3ST
+    -- Data.Vector.Algorithms.Quicksort.Predefined.VIntParallelStrategiesMedian3IO
+    -- Data.Vector.Algorithms.Quicksort.Predefined.VPairParallelStrategiesMedian3ST
+    -- Data.Vector.Algorithms.Quicksort.Predefined.VPairParallelStrategiesMedian3IO
+    --
+    -- Data.Vector.Algorithms.Quicksort.Predefined.VIntSequentialMedian3or5ST
+    -- Data.Vector.Algorithms.Quicksort.Predefined.VIntSequentialMedian3or5IO
+    -- Data.Vector.Algorithms.Quicksort.Predefined.VPairSequentialMedian3or5ST
+    -- Data.Vector.Algorithms.Quicksort.Predefined.VPairSequentialMedian3or5IO
+    -- Data.Vector.Algorithms.Quicksort.Predefined.VIntParallelStrategiesMedian3or5ST
+    -- Data.Vector.Algorithms.Quicksort.Predefined.VIntParallelStrategiesMedian3or5IO
+    -- Data.Vector.Algorithms.Quicksort.Predefined.VPairParallelStrategiesMedian3or5ST
+    -- Data.Vector.Algorithms.Quicksort.Predefined.VPairParallelStrategiesMedian3or5IO
+    --
+    -- Data.Vector.Algorithms.Quicksort.Predefined.UIntSequentialMedian3ST
+    -- Data.Vector.Algorithms.Quicksort.Predefined.UIntSequentialMedian3IO
+    -- Data.Vector.Algorithms.Quicksort.Predefined.UPairSequentialMedian3ST
+    -- Data.Vector.Algorithms.Quicksort.Predefined.UPairSequentialMedian3IO
+    -- Data.Vector.Algorithms.Quicksort.Predefined.UIntParallelStrategiesMedian3ST
+    -- Data.Vector.Algorithms.Quicksort.Predefined.UIntParallelStrategiesMedian3IO
+    -- Data.Vector.Algorithms.Quicksort.Predefined.UPairParallelStrategiesMedian3ST
+    -- Data.Vector.Algorithms.Quicksort.Predefined.UPairParallelStrategiesMedian3IO
+    --
+    -- Data.Vector.Algorithms.Quicksort.Predefined.UIntSequentialMedian3or5ST
+    -- Data.Vector.Algorithms.Quicksort.Predefined.UIntSequentialMedian3or5IO
+    -- Data.Vector.Algorithms.Quicksort.Predefined.UPairSequentialMedian3or5ST
+    -- Data.Vector.Algorithms.Quicksort.Predefined.UPairSequentialMedian3or5IO
+    -- Data.Vector.Algorithms.Quicksort.Predefined.UIntParallelStrategiesMedian3or5ST
+    -- Data.Vector.Algorithms.Quicksort.Predefined.UIntParallelStrategiesMedian3or5IO
+    -- Data.Vector.Algorithms.Quicksort.Predefined.UPairParallelStrategiesMedian3or5ST
+    -- Data.Vector.Algorithms.Quicksort.Predefined.UPairParallelStrategiesMedian3or5IO
+    --
+    -- Data.Vector.Algorithms.Quicksort.Predefined.VTupleSequentialMedian3ST
+    -- Data.Vector.Algorithms.Quicksort.Predefined.VTupleSequentialMedian3IO
+    -- Data.Vector.Algorithms.Quicksort.Predefined.VTupleParallelStrategiesMedian3ST
+    -- Data.Vector.Algorithms.Quicksort.Predefined.VTupleParallelStrategiesMedian3IO
+    -- Data.Vector.Algorithms.Quicksort.Predefined.VTupleSequentialMedian3or5ST
+    -- Data.Vector.Algorithms.Quicksort.Predefined.VTupleSequentialMedian3or5IO
+    -- Data.Vector.Algorithms.Quicksort.Predefined.VTupleParallelStrategiesMedian3or5ST
+    -- Data.Vector.Algorithms.Quicksort.Predefined.VTupleParallelStrategiesMedian3or5IO
+    -- Data.Vector.Algorithms.Quicksort.Predefined.UTupleSequentialMedian3ST
+    -- Data.Vector.Algorithms.Quicksort.Predefined.UTupleSequentialMedian3IO
+    -- Data.Vector.Algorithms.Quicksort.Predefined.UTupleParallelStrategiesMedian3ST
+    -- Data.Vector.Algorithms.Quicksort.Predefined.UTupleParallelStrategiesMedian3IO
+    -- Data.Vector.Algorithms.Quicksort.Predefined.UTupleSequentialMedian3or5ST
+    -- Data.Vector.Algorithms.Quicksort.Predefined.UTupleSequentialMedian3or5IO
+    -- Data.Vector.Algorithms.Quicksort.Predefined.UTupleParallelStrategiesMedian3or5ST
+    -- Data.Vector.Algorithms.Quicksort.Predefined.UTupleParallelStrategiesMedian3or5IO
 
   hs-source-dirs:
     src-predefined
