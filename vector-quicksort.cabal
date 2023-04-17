@@ -91,7 +91,7 @@ library
   hs-source-dirs:
     src
   build-depends:
-    , base >= 4.14 && < 5
+    , base >= 4.15 && < 5
     , primitive
     , stm
     , vector
@@ -177,7 +177,7 @@ library vector-quicksort-predefined
     src-predefined
 
   build-depends:
-    , base >= 4.14
+    , base >= 4.15
     , parallel
     , primitive
     , stm
@@ -197,7 +197,7 @@ test-suite test
     test
   build-depends:
     , QuickCheck
-    , base >= 4.14
+    , base >= 4.15
     , containers
     , tasty
     , tasty-quickcheck
@@ -256,7 +256,7 @@ benchmark bench
     bench
   build-depends:
     , atomic-counter
-    , base >= 4.14
+    , base >= 4.15
     , bytestring
     , deepseq
     , primitive
