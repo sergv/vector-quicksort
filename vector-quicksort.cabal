@@ -181,7 +181,7 @@ library vector-quicksort-predefined
     , parallel
     , primitive
     , stm
-    , vector
+    , vector >= 0.13
     , vector-quicksort
 
 test-suite test
