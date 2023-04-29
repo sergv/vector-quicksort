@@ -26,7 +26,7 @@ jobs:
             ghc: "9.6.1"
     steps:
     - uses: actions/checkout@v3
-    - uses: haskell/actions/setup@v2.0.2
+    - uses: haskell/actions/setup@v2.3.7
       id: setup-haskell-cabal
       with:
         ghc-version: ${{ matrix.ghc }}
@@ -73,3 +73,8 @@ jobs:
       run: |
         cd vector-quicksort-*/
         cabal haddock all
+
+    - name: Cabal check
+      run: |
+        cd vector-quicksort-*/
+        cabal check
