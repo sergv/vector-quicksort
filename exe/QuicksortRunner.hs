@@ -13,6 +13,7 @@
 
 module QuicksortRunner (main) where
 
+import Codec.Serialise qualified as CBOR
 import Control.Concurrent
 import Control.Concurrent.Async
 import Control.DeepSeq
@@ -20,9 +21,9 @@ import Control.Exception
 import Control.Monad
 import Data.ByteString qualified as BS
 import Data.ByteString.Char8 qualified as C8
+import Data.ByteString.Lazy qualified as BSL
 import Data.Int
 import Data.List qualified as L
-import Data.Store qualified as Store
 import Data.Vector.Primitive qualified as P
 import Debug.Trace
 import Options.Applicative hiding (str, action)
@@ -30,7 +31,6 @@ import Prettyprinter
 import Prettyprinter.Combinators
 import System.Clock.Seconds
 import System.FilePath
-import System.IO
 import Text.Printf
 
 import Data.Coerce
@@ -42,7 +42,7 @@ import Data.Vector.Algorithms.Quicksort.Median as Quick
 import Data.Vector.Algorithms.Quicksort.Parameterised qualified as Quick
 import Data.Vector.Algorithms.Quicksort.Predefined.AveragingMedian
 
-import Data.Vector.Algorithms.Quicksort.Predefined.PIntParallelMedian3or5IO
+-- import Data.Vector.Algorithms.Quicksort.Predefined.PIntParallelMedian3or5IO
 
 newtype Config = Config
   { cfgInputFile :: FilePath
@@ -104,26 +104,26 @@ main = do
     customExecParser (prefs (showHelpOnEmpty <> noBacktrack <> multiSuffix "*")) progInfo
 
   (!xs :: P.Vector Int64) <-
-    if ".store" == takeExtension cfgInputFile
-    then Store.decodeIO =<< BS.readFile cfgInputFile
+    if ".cbor" == takeExtension cfgInputFile
+    then CBOR.deserialise . BSL.fromStrict <$> BS.readFile cfgInputFile
     else read . C8.unpack <$> BS.readFile cfgInputFile
 
-  when False $ do
-    ys <- P.thaw xs
-
-    -- p <- mkParallel =<< getNumCapabilities
-    -- Quick.sortInplaceFM p (Median3 @Int64) ys
-    -- waitParallel p
-
-    sortPIntParallelMedian3or5IO  ys
-    when False $ do
-      evaluate $ rnf ys
-      hFlush stderr
-    -- threadDelay 2_000_000
-    zs <- P.unsafeFreeze ys
-    putDocLn $ ppVector zs
-    putDocLn $ "isSorted =" <+> pretty (checkIsSorted (P.toList zs))
-    putDocLn $ "== L.sort =" <+> pretty (P.toList zs == L.sort (P.toList xs))
+  -- when False $ do
+  --   ys <- P.thaw xs
+  --
+  --   -- p <- mkParallel =<< getNumCapabilities
+  --   -- Quick.sortInplaceFM p (Median3 @Int64) ys
+  --   -- waitParallel p
+  --
+  --   sortPIntParallelMedian3or5IO  ys
+  --   when False $ do
+  --     evaluate $ rnf ys
+  --     hFlush stderr
+  --   -- threadDelay 2_000_000
+  --   zs <- P.unsafeFreeze ys
+  --   putDocLn $ ppVector zs
+  --   putDocLn $ "isSorted =" <+> pretty (checkIsSorted (P.toList zs))
+  --   putDocLn $ "== L.sort =" <+> pretty (P.toList zs == L.sort (P.toList xs))
 
   when False $ do
     ys1 <- P.thaw xs
