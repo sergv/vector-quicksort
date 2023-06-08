@@ -311,7 +311,6 @@ executable quicksort-runner
     , async > 2
     , base >= 4.14
     , bytestring
-    , cborg
     , clock
     , deepseq
     , filepath

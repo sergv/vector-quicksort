@@ -13,7 +13,6 @@
 
 module QuicksortRunner (main) where
 
-import Codec.Serialise qualified as CBOR
 import Control.Concurrent
 import Control.Concurrent.Async
 import Control.DeepSeq
@@ -103,10 +102,7 @@ main = do
   Config{cfgInputFile} <-
     customExecParser (prefs (showHelpOnEmpty <> noBacktrack <> multiSuffix "*")) progInfo
 
-  (!xs :: P.Vector Int64) <-
-    if ".cbor" == takeExtension cfgInputFile
-    then CBOR.deserialise . BSL.fromStrict <$> BS.readFile cfgInputFile
-    else read . C8.unpack <$> BS.readFile cfgInputFile
+  (!xs :: P.Vector Int64) <- read . C8.unpack <$> BS.readFile cfgInputFile
 
   -- when False $ do
   --   ys <- P.thaw xs
