@@ -28,14 +28,6 @@ import Data.Vector.Generic.Mutable qualified as GM
 data MedianResult a
   -- | Value that was located at specific index in the original array.
   = ExistingValue !a {-# UNPACK #-} !Int
-  -- | Value that is a good guess for a real median but may not be
-  -- present in the array (or we don't know where it's exactly).
-  --
-  -- Good example is to pick first, last, and middle element and
-  -- average them, which restricts us to dealing with numeric values
-  -- but may yield good results depending on distribution of values in
-  -- the array to be sorted.
-  | Guess !a
 
 existingValue :: CmpFst a Int -> MedianResult a
 existingValue (CmpFst (x, n)) = ExistingValue x n
