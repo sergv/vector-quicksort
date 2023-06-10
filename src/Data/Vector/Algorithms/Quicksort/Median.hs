@@ -8,6 +8,7 @@
 {-# LANGUAGE MagicHash              #-}
 {-# LANGUAGE TypeFamilies           #-}
 {-# LANGUAGE UndecidableInstances   #-}
+{-# LANGUAGE UnboxedTuples          #-}
 
 module Data.Vector.Algorithms.Quicksort.Median
   ( Median(..)
@@ -20,17 +21,17 @@ import Prelude hiding (last)
 
 import Control.Monad.Primitive
 import Data.Bits
-import Data.Function
 import Data.Kind (Type)
 import Data.Vector.Generic.Mutable qualified as GM
+import GHC.Exts (Int(..), Int#)
 
 -- | Median selection result.
 data MedianResult a
   -- | Value that was located at specific index in the original array.
   = ExistingValue !a {-# UNPACK #-} !Int
 
-existingValue :: CmpFst a Int -> MedianResult a
-existingValue (CmpFst (x, n)) = ExistingValue x n
+existingValue :: (# a, Int# #) -> MedianResult a
+existingValue (# !x, n #) = ExistingValue x (I# n)
 
 -- | Median selection algorithm that, given a vector, should come up
 -- with an elements that has good chances to be median (i.e to be
@@ -68,8 +69,8 @@ data Median3or5 a = Median3or5
 
 {-# INLINE pick3 #-}
 -- Pick median among 3 values.
-pick3 :: Ord a => a -> a -> a -> a
-pick3 a b c =
+pick3 :: Ord a => a -> Int# -> a -> Int# -> a -> Int# -> (# a, Int# #)
+pick3 !a ai !b bi !c ci =
   if b < a
   then
     -- ... b < a ...
@@ -78,13 +79,13 @@ pick3 a b c =
       if c < b
       then
         -- c < b < a
-        b
+        (# b, bi #)
       else
         -- b <= c < a
-        c
+        (# c, ci #)
     else
       --  b < a <= c
-      a
+      (# a, ai #)
   else
     -- ... a <= b ...
     if c < b
@@ -92,18 +93,18 @@ pick3 a b c =
       if c < a
       then
         -- c < a <= b
-        a
+        (# a, ai #)
       else
         -- a <= c <= b
-        c
+        (# c, ci #)
     else
       -- a <= b <= c
-      b
+      (# b, bi #)
 
 {-# INLINE sort3 #-}
 -- Establish sortered order among 3 values.
-sort3 :: Ord a => a -> a -> a -> (a, a, a)
-sort3 a b c =
+sort3 :: Ord a => a -> Int# -> a -> Int# -> a -> Int# -> (# a, Int#, a, Int#, a, Int# #)
+sort3 !a ai !b bi !c ci =
   if b < a
   then
     -- ... b < a ...
@@ -112,13 +113,13 @@ sort3 a b c =
       if c < b
       then
         -- c < b < a
-        (c, b, a)
+        (# c, ci, b, bi, a, ai #)
       else
         -- b <= c < a
-        (b, c, a)
+        (# b, bi, c, ci, a, ai #)
     else
       --  b < a <= c
-      (b, a, c)
+      (# b, bi, a, ai, c, ci #)
   else
     -- ... a <= b ...
     if c < b
@@ -126,25 +127,13 @@ sort3 a b c =
       if c < a
       then
         -- c < a <= b
-        (c, a, b)
+        (# c, ci, a, ai, b, bi #)
       else
         -- a <= c <= b
-        (a, c, b)
+        (# a, ai, c, ci, b, bi #)
     else
       -- a <= b <= c
-      (a, b, c)
-
-newtype CmpFst a b = CmpFst { unCmpFst :: (a, b) }
-
-instance Eq a => Eq (CmpFst a b) where
-  (==) = (==) `on` fst . unCmpFst
-
-instance Ord a => Ord (CmpFst a b) where
-  compare = compare `on` fst . unCmpFst
-
-{-# INLINE readAt #-}
-readAt :: (PrimMonad m, GM.MVector v a) => v (PrimState m) a -> Int -> m (CmpFst a Int)
-readAt xs n = (\x -> CmpFst (x, n)) <$> GM.unsafeRead xs n
+      (# a, ai, b, bi, c, ci #)
 
 instance (PrimMonad m, s ~ PrimState m) => Median (Median3 a) a m s where
   {-# INLINE selectMedian #-}
@@ -157,14 +146,14 @@ instance (PrimMonad m, s ~ PrimState m) => Median (Median3 a) a m s where
   selectMedian _ !v = do
     let len :: Int
         !len = GM.length v
-        pi0, pi1, pi2 :: Int
-        !pi0  = 0
-        !pi1  = halve len
-        !pi2  = len - 1
-    !pv0 <- readAt v pi0
-    !pv1 <- readAt v pi1
-    !pv2 <- readAt v pi2
-    pure $! existingValue $ pick3 pv0 pv1 pv2
+        pi0, pi1, pi2 :: Int#
+        !(I# pi0)  = 0
+        !(I# pi1)  = halve len
+        !(I# pi2)  = len - 1
+    !pv0 <- GM.unsafeRead v (I# pi0)
+    !pv1 <- GM.unsafeRead v (I# pi1)
+    !pv2 <- GM.unsafeRead v (I# pi2)
+    pure $! existingValue (pick3 pv0 pi0 pv1 pi1 pv2 pi2)
 
 instance (PrimMonad m, s ~ PrimState m) => Median (Median3or5 a) a m s where
   {-# INLINE selectMedian #-}
@@ -177,34 +166,34 @@ instance (PrimMonad m, s ~ PrimState m) => Median (Median3or5 a) a m s where
   selectMedian _ !v = do
     let len :: Int
         !len = GM.length v
-        pi0, pi1, pi2 :: Int
-        !pi0  = 0
-        !pi1  = halve len
-        !pi2  = len - 1
-    !pv0 <- readAt v pi0
-    !pv1 <- readAt v pi1
-    !pv2 <- readAt v pi2
+        pi0, pi1, pi2 :: Int#
+        !(I# pi0)  = 0
+        !(I# pi1)  = halve len
+        !(I# pi2)  = len - 1
+    !pv0 <- GM.unsafeRead v (I# pi0)
+    !pv1 <- GM.unsafeRead v (I# pi1)
+    !pv2 <- GM.unsafeRead v (I# pi2)
 
     -- If median of 3 has chances to be good enough
     if pv0 /= pv1 && pv1 /= pv2 && pv2 /= pv0
-    then pure $! existingValue $ pick3 pv0 pv1 pv2
+    then pure $! existingValue (pick3 pv0 pi0 pv1 pi1 pv2 pi2)
     else do
-      let pi01, pi12 :: Int
-          !pi01 = halve pi1
-          !pi12 = pi1 + pi01
+      let pi01, pi12 :: Int#
+          !(I# pi01) = halve (I# pi1)
+          !(I# pi12) = I# pi1 + I# pi01
 
-      !pv01 <- readAt v pi01
-      !pv12 <- readAt v pi12
+      !pv01 <- GM.unsafeRead v (I# pi01)
+      !pv12 <- GM.unsafeRead v (I# pi12)
 
-      let (!mn, !med, !mx) = sort3 pv0 pv1 pv2
-          (!mn', !mx')
-            | pv01 < pv12 = (pv01, pv12)
-            | otherwise   = (pv12, pv01)
+      let !(# !mn, !mni, !med, !medi, !mx, !mxi #) = sort3 pv0 pi0 pv1 pi1 pv2 pi2
+          !(# !mn', !mni', !mx', !mxi' #)
+            | pv01 < pv12 = (# pv01, pi01, pv12, pi12 #)
+            | otherwise   = (# pv12, pi12, pv01, pi01 #)
 
-          !med'
-            | mn' > mx  = mx
-            | mx' < mn  = mn
-            | otherwise = pick3 mn' med mx'
+          !med'@(# !_, !_ #)
+            | mn' > mx  = (# mx, mxi #)
+            | mx' < mn  = (# mn, mni #)
+            | otherwise = pick3 mn' mni' med medi mx' mxi'
 
       pure $! existingValue med'
 
