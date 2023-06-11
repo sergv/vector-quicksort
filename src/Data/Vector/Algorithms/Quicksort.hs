@@ -80,10 +80,7 @@ import Data.Vector.Generic.Mutable qualified as GM
 
 import Data.Vector.Algorithms.Quicksort.Parameterised
 
-{-# SPECIALIZE sortInplaceFM
-  :: (PrimMonad m, Ord a, GM.MVector v a) => Sequential -> Median3or5 a -> v (PrimState m) a -> m () #-}
-
-{-# INLINABLE sort #-}
+{-# INLINE sort #-}
 -- | Good default sort. Returns sorted copy.
 --
 -- This function takes generic vectors so will work with any vectors
@@ -98,7 +95,7 @@ sort xs = runST $ do
   sortInplaceFM Sequential (Median3or5 @a) ys
   G.unsafeFreeze ys
 
-{-# INLINABLE sortInplace #-}
+{-# INLINE sortInplace #-}
 -- | Good default sort for mutable vectors.
 --
 -- This function takes generic mutable vectors so will work with any

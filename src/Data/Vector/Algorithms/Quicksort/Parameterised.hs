@@ -140,10 +140,6 @@ sortInplaceFM !p !med !vector = do
         res <- selectMedian med v'
 
         (!pi', !pv) <- case res of
-          Guess pv -> do
-            (_, !pi') <- partitionTwoWaysGuessedPivot pv last v
-            pure (pi', pv)
-
           ExistingValue pv pi -> do
             when (pi /= last) $ do
               GM.unsafeWrite v pi =<< GM.unsafeRead v last
@@ -169,38 +165,6 @@ sortInplaceFM !p !med !vector = do
       where
         !len       = GM.length v
         !depthDiff = depth - logLen
-
-{-# INLINE partitionTwoWaysGuessedPivot #-}
-partitionTwoWaysGuessedPivot
-  :: (PrimMonad m, Ord a, GM.MVector v a)
-  => a -> Int -> v (PrimState m) a -> m (a, Int)
-partitionTwoWaysGuessedPivot !pv !lastIdx !v =
-  go 0 lastIdx
-  where
-    go !i !j = do
-      !(i', xi) <- goLT i
-      !(j', xj) <- goGT j
-      if i' < j'
-      then do
-        GM.unsafeWrite v j' xi
-        GM.unsafeWrite v i' xj
-        go (i' + 1) (j' - 1)
-      else pure (xi, i')
-      where
-        goLT !k = do
-          if k <= j
-          then do
-            !x <- GM.unsafeRead v k
-            if x < pv
-            then goLT (k + 1)
-            else pure (k, x)
-          -- Be careful not to write this pv into array - pv may not exsit there.
-          else pure (k, pv)
-        goGT !k = do
-          !x <- GM.unsafeRead v k
-          if x >= pv && i < k
-          then goGT (k - 1)
-          else pure (k, x)
 
 {-# INLINE partitionTwoWaysPivotAtEnd #-}
 partitionTwoWaysPivotAtEnd

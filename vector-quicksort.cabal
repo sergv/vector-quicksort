@@ -100,7 +100,6 @@ library vector-quicksort-predefined
   import: ghc-options
 
   exposed-modules:
-    Data.Vector.Algorithms.Quicksort.Predefined.AveragingMedian
     Data.Vector.Algorithms.Quicksort.Predefined.Pair
 
     Data.Vector.Algorithms.Quicksort.Predefined.BitonicIntST
@@ -116,9 +115,6 @@ library vector-quicksort-predefined
     Data.Vector.Algorithms.Quicksort.Predefined.PIntSequentialMedian3or5IO
     Data.Vector.Algorithms.Quicksort.Predefined.PIntParallelStrategiesMedian3or5ST
     Data.Vector.Algorithms.Quicksort.Predefined.PIntParallelStrategiesMedian3or5IO
-
-    Data.Vector.Algorithms.Quicksort.Predefined.PIntSequentialAveragingMedianST
-    Data.Vector.Algorithms.Quicksort.Predefined.UPairSequentialAveragingMedianST
 
     Data.Vector.Algorithms.Quicksort.Predefined.VIntSequentialMedian3ST
     Data.Vector.Algorithms.Quicksort.Predefined.VIntSequentialMedian3IO

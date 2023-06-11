@@ -31,9 +31,6 @@ import Data.Vector.Algorithms.Quicksort.Predefined.BitonicIntST
 
 import Data.Vector.Algorithms.Quicksort.Predefined.Pair
 
-import Data.Vector.Algorithms.Quicksort.Predefined.PIntSequentialAveragingMedianST
-import Data.Vector.Algorithms.Quicksort.Predefined.UPairSequentialAveragingMedianST
-
 import Data.Vector.Algorithms.Quicksort.Predefined.PIntParallelMedian3IO
 import Data.Vector.Algorithms.Quicksort.Predefined.PIntParallelMedian3or5IO
 
@@ -178,9 +175,6 @@ sortProps = setTestCount $ testGroup "sort does not lose items"
       sortsAndDoesNotLoseItemsST @U.Vector sortUPairParallelStrategiesMedian3ST
     , QC.testProperty "Data.Vector.Unboxed (TestPair Int32 Int32) sorting ParallelStrategies Median3or5" $
       sortsAndDoesNotLoseItemsST @U.Vector sortUPairParallelStrategiesMedian3or5ST
-
-    , QC.testProperty "Data.Vector.Unboxed (TestPair Int32 Int32) sorting Sequential AveragingMedian" $
-      sortsAndDoesNotLoseItemsST @U.Vector sortUPairSequentialAveragingMedianST
     ]
   , testGroup "IO"
     [ QC.testProperty "Data.Vector (TestPair Int32 Int32) sorting Sequential Median3" $
@@ -219,9 +213,6 @@ sortProps = setTestCount $ testGroup "sort does not lose items"
       sortsAndDoesNotLoseItemsSTtoIO @U.Vector sortUPairParallelStrategiesMedian3ST
     , QC.testProperty "Data.Vector.Unboxed (TestPair Int32 Int32) sorting ParallelStrategies Median3or5" $
       sortsAndDoesNotLoseItemsSTtoIO @U.Vector sortUPairParallelStrategiesMedian3or5ST
-
-    , QC.testProperty "Data.Vector.Unboxed (TestPair Int32 Int32) sorting Sequential AveragingMedian" $
-      sortsAndDoesNotLoseItemsSTtoIO @U.Vector sortUPairSequentialAveragingMedianST
     ]
   ]
   where
@@ -307,10 +298,6 @@ sortTestsST = setTestCount $ testGroup "sort tests in ST"
   , QC.testProperty "Data.Vector.Unboxed (Int32, Int32) sorting ParStrategies Median3or5" $
       \(xs :: [(Int32, Int32)]) ->
         runST (runSort @U.Vector sortUTupleParallelStrategiesMedian3or5ST xs) === L.sort xs
-
-  , QC.testProperty "Data.Vector.Primitive Int64 sorting Sequential AveragingMedian" $
-      \(xs :: [Int64]) ->
-        runST (runSort @P.Vector sortPIntSequentialAveragingMedianST xs) === L.sort xs
   ]
 
 sortTestsIO :: TestTree
@@ -427,11 +414,6 @@ sortTestsSTtoIO = setTestCount $ testGroup "sort tests in IO via stToIO"
   , QC.testProperty "Data.Vector.Unboxed (Int32, Int32) sorting ParStrategies Median3or5" $
       \(xs :: [(Int32, Int32)]) -> ioProperty $ do
         ys <- runSortSTtoIO @U.Vector sortUTupleParallelStrategiesMedian3or5ST xs
-        pure $ ys === L.sort xs
-
-  , QC.testProperty "Data.Vector.Primitive Int64 sorting Sequential AveragingMedian" $
-      \(xs :: [Int64]) -> ioProperty $ do
-        ys <- runSortSTtoIO @P.Vector sortPIntSequentialAveragingMedianST xs
         pure $ ys === L.sort xs
   ]
 
