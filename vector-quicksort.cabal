@@ -272,4 +272,4 @@ benchmark bench
     -rtsopts
     -threaded
     "-with-rtsopts=-N -A16m -n1m -qg -qb"
-    -main-is BenchmarkMain
+    -main-is BenchMain

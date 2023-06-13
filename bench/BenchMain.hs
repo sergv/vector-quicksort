@@ -12,7 +12,7 @@
 
 {-# OPTIONS_GHC -Wno-orphans #-}
 
-module BenchmarkMain (main) where
+module BenchMain (main) where
 
 import Prelude hiding (pi, last)
 
