@@ -1,4 +1,4 @@
-[![build](https://github.com/sergv/atomic-counter/actions/workflows/haskell-ci.yaml/badge.svg)](https://github.com/sergv/atomic-counter/actions/workflows/haskell-ci.yaml)
+[![build](https://github.com/sergv/vecttor-quicksort/actions/workflows/haskell-ci.yaml/badge.svg)](https://github.com/sergv/vecttor-quicksort/actions/workflows/haskell-ci.yaml)
 
 # Synopsis
 
