@@ -36,6 +36,7 @@ import Data.Vector.Storable.Mutable qualified as SM
 import Foreign.C.Types
 import System.Random.Stateful
 
+import Test.Tasty (localOption)
 import Test.Tasty.Bench
 import Test.Tasty.Patterns.Printer (printAwkExpr)
 
@@ -174,7 +175,7 @@ main = do
   evaluate $ rnf xsssNoDup
   evaluate $ rnf xsssDup
 
-  defaultMain $
+  defaultMain $ map (localOption WallTime) $
     [ mkBenches "Sorting fuzzy matching scores vector" (MkSolo fuzzyMatchScores)
     ] ++
     [ mkBenches ("Sorting " ++ show (length xss) ++ " random arrays of length " ++ T.unpack (formatNumber (P.length (head xss))) ++ " with few duplicates") xss
