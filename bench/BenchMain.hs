@@ -22,8 +22,9 @@ import Control.Exception
 import Control.Monad
 import Control.Monad.ST
 import Data.ByteString.Char8 qualified as C8
+import Data.Coerce
+import Data.Foldable
 import Data.Int
-import Data.Ord
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.Builder.Linear qualified as TBL
@@ -33,11 +34,15 @@ import Data.Vector.Primitive qualified as P
 import Data.Vector.Primitive.Mutable qualified as PM
 import Data.Vector.Storable qualified as S
 import Data.Vector.Storable.Mutable qualified as SM
+import Data.Vector.Unboxed qualified as U
+import Data.Vector.Unboxed.Mutable qualified as UM
+import Data.Word
 import Foreign.C.Types
 import System.Random.Stateful
 
 import Test.Tasty (localOption)
 import Test.Tasty.Bench
+import Test.Tasty.HUnit
 import Test.Tasty.Patterns.Printer (printAwkExpr)
 
 import ForeignSorting
@@ -56,13 +61,12 @@ import Data.Vector.Algorithms.Quicksort.Predefined.PIntSequentialMedian3or5ST
 import Data.Vector.Algorithms.Quicksort.Predefined.PIntParallelMedian3IO
 import Data.Vector.Algorithms.Quicksort.Predefined.PIntParallelMedian3or5IO
 
-newtype SortKey v = SortKey { _unSortKey :: (Int32, Int, v) }
 
-instance Eq (SortKey v) where
-  SortKey (a, b, _) == SortKey (a', b', _) = a == a' && b == b'
-
-instance Ord (SortKey v) where
-  SortKey (a, b, _) `compare` SortKey (a', b', _) = Down a `compare` Down a' <> b `compare` b'
+import Data.Vector.Algorithms.Quicksort.Predefined.SortTriple
+import Data.Vector.Algorithms.Quicksort.Predefined.PTripleSequentialMedian3ST
+import Data.Vector.Algorithms.Quicksort.Predefined.PTripleSequentialMedian3or5ST
+import Data.Vector.Algorithms.Quicksort.Predefined.UTripleSequentialMedian3ST
+import Data.Vector.Algorithms.Quicksort.Predefined.UTripleSequentialMedian3or5ST
 
 {-# NOINLINE qsortSeq3 #-}
 qsortSeq3 :: P.Vector Int64 -> ST s (PM.MVector s Int64)
@@ -155,6 +159,68 @@ cppUnboxedInt64 xs = do
   SM.unsafeWith ys $ \ptr -> cppSortInt64 ptr (CInt (fromIntegral (SM.length ys)))
   pure ys
 
+{-# NOINLINE cppStorableTriple #-}
+cppStorableTriple :: S.Vector CPoint -> IO (SM.MVector RealWorld CPoint)
+cppStorableTriple xs = do
+  ys <- S.thaw xs
+  SM.unsafeWith ys $ \ptr -> cppSortCPoint ptr (CInt (fromIntegral (SM.length ys)))
+  pure ys
+
+{-# NOINLINE cppStorableTripleUnpacked #-}
+cppStorableTripleUnpacked
+  :: (S.Vector CDouble, S.Vector CDouble, S.Vector Word64)
+  -> IO (SM.MVector RealWorld CDouble, SM.MVector RealWorld CDouble, SM.MVector RealWorld Word64)
+cppStorableTripleUnpacked (as, bs, cs) = do
+  as' <- S.thaw as
+  bs' <- S.thaw bs
+  cs' <- S.thaw cs
+  SM.unsafeWith as' $ \as'' ->
+    SM.unsafeWith bs' $ \bs'' ->
+      SM.unsafeWith cs' $ \cs'' -> cppSortCPointUnboxed as'' bs'' cs'' (CInt (fromIntegral (SM.length as')))
+  pure (as', bs', cs')
+
+{-# NOINLINE qsortSeq3STTripleUnbox #-}
+qsortSeq3STTripleUnbox
+  :: forall s.
+     U.Vector (Double, Double, Word64)
+  -> ST s (UM.MVector s (Double, Double, Word64))
+qsortSeq3STTripleUnbox xs = do
+  (ys :: UM.MVector s (Double, Double, Word64)) <- U.thaw xs
+  sortUTripleSequentialMedian3ST (coerce ys :: UM.MVector s SortTriple)
+  pure ys
+
+{-# NOINLINE qsortSeq3or5STTripleUnbox #-}
+qsortSeq3or5STTripleUnbox
+  :: forall s.
+     U.Vector (Double, Double, Word64)
+  -> ST s (UM.MVector s (Double, Double, Word64))
+qsortSeq3or5STTripleUnbox xs = do
+  (ys :: UM.MVector s (Double, Double, Word64)) <- U.thaw xs
+  sortUTripleSequentialMedian3or5ST (coerce ys :: UM.MVector s SortTriple)
+  pure ys
+
+
+{-# NOINLINE qsortSeq3STTriplePrim #-}
+qsortSeq3STTriplePrim
+  :: forall s.
+     P.Vector SortTriple
+  -> ST s (PM.MVector s SortTriple)
+qsortSeq3STTriplePrim xs = do
+  (ys :: PM.MVector s SortTriple) <- P.thaw xs
+  sortPTripleSequentialMedian3ST ys
+  pure ys
+
+{-# NOINLINE qsortSeq3or5STTriplePrim #-}
+qsortSeq3or5STTriplePrim
+  :: forall s.
+     P.Vector SortTriple
+  -> ST s (PM.MVector s SortTriple)
+qsortSeq3or5STTriplePrim xs = do
+  (ys :: PM.MVector s SortTriple) <- P.thaw xs
+  sortPTripleSequentialMedian3or5ST ys
+  pure ys
+
+
 main :: IO ()
 main = do
   (fuzzyMatchScores :: P.Vector Int64) <-
@@ -162,38 +228,60 @@ main = do
 
   putStrLn $ "P.length fuzzyMatchScores = " ++ show (P.length fuzzyMatchScores)
 
-  let generate :: Int -> Int -> IOGenM StdGen -> IO (P.Vector Int64)
-      generate n k g = P.fromList <$> replicateM n (uniformRM (1 :: Int64, fromIntegral k) g)
+  let generateInt64 :: Int -> Int -> IOGenM StdGen -> IO (P.Vector Int64)
+      generateInt64 n k g = P.replicateM n (uniformRM (1 :: Int64, fromIntegral k) g)
+
+  let generateTriple :: Int -> Int -> IOGenM StdGen -> IO (U.Vector (Double, Double, Word64))
+      generateTriple n k g =
+        U.replicateM n $
+          (,,)
+            <$> uniformDouble01M g
+            <*> uniformDouble01M g
+            <*> uniformRM (1 :: Word64, fromIntegral k) g
 
   gen       <- newIOGenM $ mkStdGen 1
   let sizes :: [(Int, Int)]
-      sizes = map (10, ) [16, 17, 100, 256, 1000, 10_000, 100_000, 1_000_000, 10_000_000]
+      sizes = map (10, ) [16, 17, 100, 256, 1000, 10_000, 100_000, 1_000_000] -- [, 10_000_000]
 
-  xsssNoDup <- traverse (\(n, k) -> replicateM n $ generate k k gen) sizes
-  xsssDup   <- traverse (\(n, k) -> replicateM n $ generate k (max 1000 (k `quot` 1000)) gen) sizes
+  (xsssNoDup :: [[P.Vector Int64]]) <- traverse (\(n, k) -> replicateM n $ generateInt64 k k gen) sizes
+  (xsssDup   :: [[P.Vector Int64]]) <- traverse (\(n, k) -> replicateM n $ generateInt64 k (max 1000 (k `quot` 1000)) gen) sizes
+
+  (ysssNoDup :: [[U.Vector (Double, Double, Word64)]]) <- traverse (\(n, k) -> replicateM n $ generateTriple k k gen) sizes
+  (ysssDup   :: [[U.Vector (Double, Double, Word64)]]) <- traverse (\(n, k) -> replicateM n $ generateTriple k (max 1000 (k `quot` 1000)) gen) sizes
 
   evaluate $ rnf xsssNoDup
   evaluate $ rnf xsssDup
+  evaluate $ rnf ysssNoDup
+  evaluate $ rnf ysssDup
 
   defaultMain $ map (localOption WallTime) $
-    [ mkBenches "Sorting fuzzy matching scores vector" (MkSolo fuzzyMatchScores)
+    [ mkBenchesInt64 "Sorting fuzzy matching scores vector" (MkSolo fuzzyMatchScores)
     ] ++
-    [ mkBenches ("Sorting " ++ show (length xss) ++ " random arrays of length " ++ T.unpack (formatNumber (P.length (head xss))) ++ " with few duplicates") xss
-    | xss <- xsssNoDup
-    ] ++
-    [ mkBenches ("Sorting " ++ show (length xss) ++ " random arrays of length " ++ T.unpack (formatNumber (P.length (head xss))) ++ " with many duplicates") xss
-    | xss <- xsssDup
+    [ bgroup "Int64" $
+      [ mkBenchesInt64 ("Sorting " ++ show (length xss) ++ " random arrays of length " ++ T.unpack (formatNumber (P.length (head xss))) ++ " with few duplicates") xss
+      | xss <- xsssNoDup
+      ] ++
+      [ mkBenchesInt64 ("Sorting " ++ show (length xss) ++ " random arrays of length " ++ T.unpack (formatNumber (P.length (head xss))) ++ " with many duplicates") xss
+      | xss <- xsssDup
+      ]
+    , bgroup "(Double, Double, Int64)" $
+      [ mkBenchesTriple ("Sorting " ++ show (length yss) ++ " random arrays of length " ++ T.unpack (formatNumber (U.length (head yss))) ++ " with few duplicates") yss
+      | yss <- ysssNoDup
+      ] ++
+      [ mkBenchesTriple ("Sorting " ++ show (length yss) ++ " random arrays of length " ++ T.unpack (formatNumber (U.length (head yss))) ++ " with many duplicates") yss
+      | yss <- ysssDup
+      ]
     ]
 
 instance NFData (TVar a) where
   rnf x = x `seq` ()
 
-{-# INLINE mkBenches #-}
-mkBenches
+{-# INLINE mkBenchesInt64 #-}
+mkBenchesInt64
   :: forall f. (Traversable f, forall a. NFData a => NFData (f a))
   => String -> f (P.Vector Int64) -> Benchmark
-mkBenches name xssPrim = mapLeafBenchmarks addCompare $ bgroup name
-  [ bench cppBenchName                    $ nfAppIO (traverse cppUnboxedInt64) xsStorable
+mkBenchesInt64 name xssPrim = mapLeafBenchmarks addCompare $ bgroup name
+  [ bench cppBenchName                    $ nfAppIO (traverse cppUnboxedInt64) xssStorable
 
   , bench "Sequential ST Median3"         $ nfAppIO (stToIO . traverse qsortSeq3) xssPrim
   , bench "Sequential IO Median3"         $ nfAppIO (traverse qsortSeqIO3) xssPrim
@@ -212,8 +300,76 @@ mkBenches name xssPrim = mapLeafBenchmarks addCompare $ bgroup name
   , bench "fallback heapsort"             $ nfAppIO (stToIO . traverse fallbackHeapsortInt64) xssPrim
   ]
   where
-    xsStorable :: f (S.Vector Int64)
-    xsStorable = P.convert <$> xssPrim
+    xssStorable :: f (S.Vector Int64)
+    xssStorable = P.convert <$> xssPrim
+
+isSorted :: Ord a => [a] -> Bool
+isSorted = \case
+  []     -> True
+  x : xs -> go x xs
+  where
+    go _ []       = True
+    go x (y : ys) = x <= y && go y ys
+
+assertSorted :: (Show a, Ord a) => String -> [a] -> IO ()
+assertSorted label xs =
+  assertBool (label ++ " not sorted: " ++ show xs) $ isSorted xs
+
+{-# INLINE mkBenchesTriple #-}
+mkBenchesTriple
+  :: forall f. (Traversable f, forall a. NFData a => NFData (f a))
+  => String -> f (U.Vector (Double, Double, Word64)) -> Benchmark
+mkBenchesTriple name xssUnbox = bgroup name
+  [ testCase "Sanity" $
+      for_ xssUnbox $ \xs -> do
+        xsUnboxed  <- U.unsafeFreeze =<< stToIO (qsortSeq3STTripleUnbox xs)
+        xsStorable <- S.unsafeFreeze =<< cppStorableTriple (mkStorable xs)
+        xsUnpacked <-
+          (\(a, b, c) -> (,,) <$> S.unsafeFreeze a <*> S.unsafeFreeze b <*> S.unsafeFreeze c) =<<
+          cppStorableTripleUnpacked (mkUnpacked xs)
+        xsPrim     <- P.unsafeFreeze =<< stToIO (qsortSeq3STTriplePrim (mkPrim xs))
+        assertSorted "Unboxed"   $ map (\(_, _, c) -> c) $ U.toList xsUnboxed
+        assertSorted "Storabale" $ map (\(CPoint _ _ z) -> z) $ S.toList xsStorable
+        assertSorted "Unpacked"  $ S.toList $ (\(_, _, c) -> c) xsUnpacked
+        assertSorted "Prim"      $ map (\(SortTriple _ _ c) -> c) $ P.toList $ xsPrim
+
+  , bench "C++ single vector"              $ nfAppIO (traverse cppStorableTriple) xssStorable
+  , bench "C++ three vectors"              $ nfAppIO (traverse cppStorableTripleUnpacked) xssUnpacked
+
+  , bench "Sequential ST Median3 Unbox"    $ nfAppIO (stToIO . traverse qsortSeq3STTripleUnbox) xssUnbox
+  , bench "Sequential ST Median3or5 Unbox" $ nfAppIO (stToIO . traverse qsortSeq3or5STTripleUnbox) xssUnbox
+
+  , bench "Sequential ST Median3 Prim"     $ nfAppIO (stToIO . traverse qsortSeq3STTriplePrim) xssPrim
+  , bench "Sequential ST Median3or5 Prim"  $ nfAppIO (stToIO . traverse qsortSeq3or5STTriplePrim) xssPrim
+  ]
+  where
+    mkStorable
+      :: U.Vector (Double, Double, Word64)
+      -> S.Vector CPoint
+    mkStorable = S.fromList . map (\(a, b, c) -> CPoint (CDouble a) (CDouble b) c) . U.toList
+
+    mkPrim
+      :: U.Vector (Double, Double, Word64)
+      -> P.Vector SortTriple
+    mkPrim = U.convert . U.map (\(a, b, c) -> SortTriple a b c)
+
+    mkUnpacked
+      :: U.Vector (Double, Double, Word64)
+      -> (S.Vector CDouble, S.Vector CDouble, S.Vector Word64)
+    mkUnpacked xs =
+      ( S.fromList . map (\(a, _, _) -> CDouble a) . U.toList $ xs
+      , S.fromList . map (\(_, b, _) -> CDouble b) . U.toList $ xs
+      , U.convert . U.map (\(_, _, c) -> c) $ xs
+      )
+
+    xssStorable :: f (S.Vector CPoint)
+    xssStorable = mkStorable <$> xssUnbox
+
+    xssUnpacked :: f (S.Vector CDouble, S.Vector CDouble, S.Vector Word64)
+    xssUnpacked = mkUnpacked <$> xssUnbox
+
+    xssPrim :: f (P.Vector SortTriple)
+    xssPrim = mkPrim <$> xssUnbox
 
 cppBenchName :: String
 cppBenchName = "C++"

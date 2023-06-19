@@ -101,6 +101,7 @@ library vector-quicksort-predefined
 
   exposed-modules:
     Data.Vector.Algorithms.Quicksort.Predefined.Pair
+    Data.Vector.Algorithms.Quicksort.Predefined.SortTriple
 
     Data.Vector.Algorithms.Quicksort.Predefined.BitonicIntST
 
@@ -168,6 +169,11 @@ library vector-quicksort-predefined
     Data.Vector.Algorithms.Quicksort.Predefined.UTupleSequentialMedian3or5IO
     Data.Vector.Algorithms.Quicksort.Predefined.UTupleParallelStrategiesMedian3or5ST
     Data.Vector.Algorithms.Quicksort.Predefined.UTupleParallelStrategiesMedian3or5IO
+
+    Data.Vector.Algorithms.Quicksort.Predefined.PTripleSequentialMedian3ST
+    Data.Vector.Algorithms.Quicksort.Predefined.PTripleSequentialMedian3or5ST
+    Data.Vector.Algorithms.Quicksort.Predefined.UTripleSequentialMedian3ST
+    Data.Vector.Algorithms.Quicksort.Predefined.UTripleSequentialMedian3or5ST
 
   hs-source-dirs:
     src-predefined
@@ -244,6 +250,8 @@ benchmark bench
     ForeignSorting
   hs-source-dirs:
     bench
+  build-tool-depends:
+    , hsc2hs:hsc2hs
   build-depends:
     , atomic-counter
     , base >= 4.15
@@ -254,6 +262,7 @@ benchmark bench
     , stm
     , tasty
     , tasty-bench >= 0.3.2
+    , tasty-hunit
     , text
     , text-builder-linear
     , vector
