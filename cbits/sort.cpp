@@ -22,6 +22,8 @@ struct value_t {
     _Order val;
     inline value_t(_Data1 _data1, _Data2 _data2, _Order _val) : data1(_data1), data2(_data2), val(_val) {}
     inline value_t(const value_reference_t<_Data1, _Data2, _Order>& rhs);
+
+    inline bool operator < (const value_t<_Data1, _Data2, _Order>& rhs) const { return val < rhs.val; }
 };
 
 template <typename _Data1, typename _Data2, typename _Order>
@@ -51,7 +53,7 @@ struct value_reference_t {
 
 template <typename _Data1, typename _Data2, typename _Order>
 struct value_iterator_t :
-    iterator<
+    std::iterator<
     random_access_iterator_tag,
     value_t<_Data1, _Data2, _Order>,
     ptrdiff_t,
@@ -76,6 +78,20 @@ struct value_iterator_t :
     inline value_iterator_t operator - (ptrdiff_t off) const {
         return value_iterator_t(itData1 - off, itData2 - off, itVal - off);
     }
+
+    inline value_iterator_t& operator += (ptrdiff_t off) {
+        itData1 += off;
+        itData2 += off;
+        itVal   += off;
+        return *this;
+    }
+    inline value_iterator_t& operator -= (ptrdiff_t off) {
+        itData1 -= off;
+        itData2 -= off;
+        itVal   -= off;
+        return *this;
+    }
+
     inline value_iterator_t& operator ++ () { ++itData1; ++itData2; ++itVal; return *this; }
     inline value_iterator_t& operator -- () { --itData1; --itData2; --itVal; return *this; }
     inline value_iterator_t operator ++ (int) { return value_iterator_t(itData1++, itData2++, itVal++); }
@@ -86,7 +102,11 @@ struct value_iterator_t :
     inline value_reference_t<_Data1, _Data2, _Order> operator * () {
         return value_reference_t<_Data1, _Data2, _Order>(itData1, itData2, itVal);
     }
-    inline bool operator <  (const value_iterator_t& rhs) const { return itVal  < rhs.itVal; }
+
+    inline bool operator <  (const value_iterator_t& rhs) const { return itVal <  rhs.itVal; }
+    inline bool operator <= (const value_iterator_t& rhs) const { return itVal <= rhs.itVal; }
+    inline bool operator >  (const value_iterator_t& rhs) const { return itVal >  rhs.itVal; }
+    inline bool operator >= (const value_iterator_t& rhs) const { return itVal >= rhs.itVal; }
     inline bool operator == (const value_iterator_t& rhs) const { return itVal == rhs.itVal; }
     inline bool operator != (const value_iterator_t& rhs) const { return itVal != rhs.itVal; }
 };
