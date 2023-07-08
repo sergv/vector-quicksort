@@ -41,6 +41,8 @@ build-type:
 
 extra-source-files:
   Readme.md
+  cbits/sort.cpp
+  cbits/sort.h
 
 homepage:
   https://github.com/sergv/vector-quicksort
