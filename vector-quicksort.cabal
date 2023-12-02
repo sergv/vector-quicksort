@@ -185,9 +185,7 @@ library vector-quicksort-predefined
 
   build-depends:
     , base >= 4.15
-    , parallel
     , primitive
-    , stm
     , vector >= 0.13
     , vector-quicksort
 
@@ -258,11 +256,9 @@ benchmark bench
   build-tool-depends:
     , hsc2hs:hsc2hs
   build-depends:
-    , atomic-counter
     , base >= 4.15
     , bytestring
     , deepseq
-    , primitive
     , random
     , stm
     , tasty
