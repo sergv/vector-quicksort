@@ -56,7 +56,6 @@ common ghc-options
     GHC2021
 
   default-extensions:
-    ImportQualifiedPost
     LambdaCase
 
   ghc-options:
@@ -69,7 +68,6 @@ common ghc-options
     -Wno-missing-local-signatures
     -Wno-missing-safe-haskell-mode
     -Wno-safe
-    -Wno-type-defaults
     -Wno-unsafe
     -Wno-unused-packages
 
@@ -80,6 +78,11 @@ common ghc-options
   if impl(ghc >= 9.2)
     ghc-options:
       -Wno-missing-kind-signatures
+
+  if impl(ghc >= 9.8)
+    ghc-options:
+      -Wno-missing-role-annotations
+      -Wno-missing-poly-kind-signatures
 
 library
   import: ghc-options
