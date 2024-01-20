@@ -258,20 +258,24 @@ main = do
     [ mkBenchesInt64 "Sorting fuzzy matching scores vector" (MkSolo fuzzyMatchScores)
     ] ++
     [ bgroup "Int64" $
-      [ mkBenchesInt64 ("Sorting " ++ show (length xss) ++ " random arrays of length " ++ T.unpack (formatNumber (P.length (head xss))) ++ " with few duplicates") xss
+      [ mkBenchesInt64 ("Sorting " ++ show (length xss) ++ " random arrays of length " ++ T.unpack (formatNumber (P.length (head' xss))) ++ " with few duplicates") xss
       | xss <- xsssNoDup
       ] ++
-      [ mkBenchesInt64 ("Sorting " ++ show (length xss) ++ " random arrays of length " ++ T.unpack (formatNumber (P.length (head xss))) ++ " with many duplicates") xss
+      [ mkBenchesInt64 ("Sorting " ++ show (length xss) ++ " random arrays of length " ++ T.unpack (formatNumber (P.length (head' xss))) ++ " with many duplicates") xss
       | xss <- xsssDup
       ]
     , bgroup "(Double, Double, Int64)" $
-      [ mkBenchesTriple ("Sorting " ++ show (length yss) ++ " random arrays of length " ++ T.unpack (formatNumber (U.length (head yss))) ++ " with few duplicates") yss
+      [ mkBenchesTriple ("Sorting " ++ show (length yss) ++ " random arrays of length " ++ T.unpack (formatNumber (U.length (head' yss))) ++ " with few duplicates") yss
       | yss <- ysssNoDup
       ] ++
-      [ mkBenchesTriple ("Sorting " ++ show (length yss) ++ " random arrays of length " ++ T.unpack (formatNumber (U.length (head yss))) ++ " with many duplicates") yss
+      [ mkBenchesTriple ("Sorting " ++ show (length yss) ++ " random arrays of length " ++ T.unpack (formatNumber (U.length (head' yss))) ++ " with many duplicates") yss
       | yss <- ysssDup
       ]
     ]
+
+head' :: [a] -> a
+head' (x:_) = x
+head' []     = error "oops, empty head"
 
 instance NFData (TVar a) where
   rnf x = x `seq` ()
