@@ -134,6 +134,15 @@ bool operator < (
 }
 
 template <typename _Data1, typename _Data2, typename _Order>
+bool operator < (
+    const value_reference_t<_Data1, _Data2, _Order>& lhs,
+    const value_reference_t<_Data1, _Data2, _Order>& rhs
+    )
+{
+    return *lhs.pval < *rhs.pval;
+}
+
+template <typename _Data1, typename _Data2, typename _Order>
 void swap(
     value_reference_t<_Data1, _Data2, _Order> lhs,
     value_reference_t<_Data1, _Data2, _Order> rhs
