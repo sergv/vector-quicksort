@@ -109,9 +109,10 @@ jobs:
         ghcup install ghc --set ${{ matrix.ghc }}
         ghcup install cabal latest
 
+    # This version must stay old enough to remain compatible with the container image.
     - uses: actions/checkout@v1
 
-    - name: Cabal version
+    - name: Cabal update
       run: |
         source ~/.ghcup/env
         cabal --version
@@ -119,6 +120,7 @@ jobs:
     - name: Unpack
       run: |
         source ~/.ghcup/env
+        cabal update
 
         cabal sdist --ignore-project --output-directory ..
         cd ..
@@ -127,7 +129,6 @@ jobs:
     - name: Build
       run: |
         source ~/.ghcup/env
-        cabal update
 
         project_file="$(pwd)/cabal.project.test"
         cd ../vector-quicksort-*/
