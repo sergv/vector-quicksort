@@ -38,10 +38,10 @@
 -- to make sure that this function doesn't take any class
 -- dictionaries. If it does then performance will be very bad since
 -- either comparisons will go via indirection, vector reads/writes,
--- monadic bind, or any combinatior of those will go through
+-- monadic bind, or any combination of those will go through
 -- dictionary indirection. This can be avoided either by compiling
--- with @-fspecialise-aggressively@ flag or by using via @SPECIALIZE@
--- pragmas, like so:
+-- with @-fspecialise-aggressively@ flag or by issuing @SPECIALIZE@
+-- pragmas manually, like so:
 --
 -- > -- Either use the flag to specialize everything, ...
 -- > {-# OPTIONS_GHC -fspecialise-aggressively #-}
@@ -63,6 +63,10 @@
 -- > {-# SPECIALIZE heapSort    :: U.MVector RealWorld Int -> IO ()        #-}
 -- > {-# SPECIALIZE bitonicSort :: Int -> U.MVector RealWorld Int -> IO () #-}
 -- > {-# SPECIALIZE sort        :: U.MVector RealWorld Int -> IO ()        #-}
+--
+-- Please note that since GHC 9.6 SPECIALIZE may not do anything for
+-- the @ST@ monad unless -fpolymorphic-specialisation flag is also
+-- enabled.
 
 {-# OPTIONS_GHC -Wno-orphans #-}
 
