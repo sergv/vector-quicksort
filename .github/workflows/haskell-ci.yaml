@@ -68,6 +68,8 @@ jobs:
         cd ../vector-quicksort-*/
         cabal run --project-file "$project_file" test -- --quickcheck-tests=100000 --quickcheck-max-size=1000
 
+        cabal run --project-file "$project_file" bench -- --stdev 100 --timeout 600
+
     - name: Doctest
       run: |
         cd ../vector-quicksort-*/
