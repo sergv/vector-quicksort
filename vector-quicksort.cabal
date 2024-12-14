@@ -104,6 +104,10 @@ library
 library vector-quicksort-predefined
   import: ghc-options
 
+  if impl(ghc >= 9.6)
+    ghc-options:
+      -fpolymorphic-specialisation
+
   exposed-modules:
     Data.Vector.Algorithms.Quicksort.Predefined.Pair
     Data.Vector.Algorithms.Quicksort.Predefined.SortTriple
