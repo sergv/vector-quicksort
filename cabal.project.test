@@ -3,6 +3,7 @@ packages:
 
 package vector-quicksort
   tests: True
+  benchmarks: True
 
 constraints:
   vector +BoundsChecks +UnsafeChecks +InternalChecks
