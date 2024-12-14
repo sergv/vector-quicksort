@@ -3,7 +3,7 @@ cabal-version: 3.0
 name:
   vector-quicksort
 version:
-  0.1
+  0.2
 
 synopsis:
   Fast and flexible quicksort implementation for mutable vectors
@@ -41,6 +41,7 @@ build-type:
 
 extra-source-files:
   Readme.md
+  Changelog.md
   cbits/sort.cpp
   cbits/sort.h
 
