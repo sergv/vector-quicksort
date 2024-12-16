@@ -266,7 +266,7 @@ benchmark bench
     , deepseq
     , random
     , stm
-    , tasty
+    , tasty >= 1.5
     , tasty-bench >= 0.3.2
     , tasty-hunit
     , text

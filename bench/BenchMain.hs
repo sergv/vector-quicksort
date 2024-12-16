@@ -38,12 +38,16 @@ import Data.Vector.Unboxed qualified as U
 import Data.Vector.Unboxed.Mutable qualified as UM
 import Data.Word
 import Foreign.C.Types
+import System.Exit
 import System.Random.Stateful
 
-import Test.Tasty (localOption)
+import Test.Tasty
 import Test.Tasty.Bench
 import Test.Tasty.HUnit
+import Test.Tasty.Ingredients.ConsoleReporter (MinDurationToReport(MinDurationToReport))
+import Test.Tasty.Options
 import Test.Tasty.Patterns.Printer (printAwkExpr)
+import Test.Tasty.Runners
 
 import ForeignSorting
 
@@ -254,24 +258,37 @@ main = do
   evaluate $ rnf ysssNoDup
   evaluate $ rnf ysssDup
 
-  defaultMain $ map (localOption WallTime) $
-    [ mkBenchesInt64 "Sorting fuzzy matching scores vector" (MkSolo fuzzyMatchScores)
-    ] ++
-    [ bgroup "Int64" $
-      [ mkBenchesInt64 ("Sorting " ++ show (length xss) ++ " random arrays of length " ++ T.unpack (formatNumber (P.length (head' xss))) ++ " with few duplicates") xss
-      | xss <- xsssNoDup
-      ] ++
-      [ mkBenchesInt64 ("Sorting " ++ show (length xss) ++ " random arrays of length " ++ T.unpack (formatNumber (P.length (head' xss))) ++ " with many duplicates") xss
-      | xss <- xsssDup
-      ]
-    , bgroup "(Double, Double, Int64)" $
-      [ mkBenchesTriple ("Sorting " ++ show (length yss) ++ " random arrays of length " ++ T.unpack (formatNumber (U.length (head' yss))) ++ " with few duplicates") yss
-      | yss <- ysssNoDup
-      ] ++
-      [ mkBenchesTriple ("Sorting " ++ show (length yss) ++ " random arrays of length " ++ T.unpack (formatNumber (U.length (head' yss))) ++ " with many duplicates") yss
-      | yss <- ysssDup
-      ]
-    ]
+  let ingredients = benchIngredients
+
+  let benchmark = bgroup "All" $ map (localOption WallTime) $
+        [ mkBenchesInt64 "Sorting fuzzy matching scores vector" (MkSolo fuzzyMatchScores)
+        ] ++
+        [ bgroup "Int64" $
+          [ mkBenchesInt64 ("Sorting " ++ show (length xss) ++ " random arrays of length " ++ T.unpack (formatNumber (P.length (head' xss))) ++ " with few duplicates") xss
+          | xss <- xsssNoDup
+          ] ++
+          [ mkBenchesInt64 ("Sorting " ++ show (length xss) ++ " random arrays of length " ++ T.unpack (formatNumber (P.length (head' xss))) ++ " with many duplicates") xss
+          | xss <- xsssDup
+          ]
+        , bgroup "(Double, Double, Int64)" $
+          [ mkBenchesTriple ("Sorting " ++ show (length yss) ++ " random arrays of length " ++ T.unpack (formatNumber (U.length (head' yss))) ++ " with few duplicates") yss
+          | yss <- ysssNoDup
+          ] ++
+          [ mkBenchesTriple ("Sorting " ++ show (length yss) ++ " random arrays of length " ++ T.unpack (formatNumber (U.length (head' yss))) ++ " with many duplicates") yss
+          | yss <- ysssDup
+          ]
+        ]
+
+  installSignalHandlers
+  opts <- parseOptions ingredients benchmark
+  let opts' = setOption (MinDurationToReport 1000000000000) $ setOption (NumThreads 1) opts
+
+  case tryIngredients ingredients opts' benchmark of
+    Nothing -> die
+      "No ingredients agreed to run. Something is wrong either with your ingredient set or the options."
+    Just act -> do
+      ok <- act
+      if ok then exitSuccess else exitFailure
 
 head' :: [a] -> a
 head' (x:_) = x

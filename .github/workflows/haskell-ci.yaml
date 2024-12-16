@@ -115,7 +115,11 @@ jobs:
           apt-get install -y curl ghc cabal-install libghc-tasty-quickcheck-dev libghc-tasty-hunit-dev g++
         run: |
           project_file="$(pwd)/cabal.project.test"
+
           cabal update
+
           cabal build --project-file "$project_file" --enable-tests --enable-benchmarks all
-          cabal run --project-file "$project_file" test -- --quickcheck-tests=10000 --quickcheck-max-size=256
-          cabal run --project-file "$project_file" bench -- --stdev 100 --timeout 600
+
+          LANG="C" cabal run --project-file "$project_file" test -- --quickcheck-tests=10000 --quickcheck-max-size=256 --ansi-tricks=false
+
+          LANG="C" cabal run --project-file "$project_file" bench -- --stdev 100 --timeout 600 --ansi-tricks=false
