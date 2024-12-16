@@ -122,4 +122,4 @@ jobs:
 
           LANG="C" cabal run --project-file "$project_file" test -- --quickcheck-tests=10000 --quickcheck-max-size=256 --ansi-tricks=false
 
-          LANG="C" cabal run --project-file "$project_file" bench -- --stdev 100 --timeout 600 --ansi-tricks=false
+          LANG="C" cabal run --project-file "$project_file" bench -- --stdev 100 --timeout 600 --ansi-tricks=false -p '/Sorting fuzzy matching scores vector/ || /Sorting 10 random arrays of length 100,000 with few duplicates/'
