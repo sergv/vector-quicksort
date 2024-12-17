@@ -105,6 +105,9 @@ library
 library vector-quicksort-predefined
   import: ghc-options
 
+  visibility:
+    private
+
   if impl(ghc >= 9.6)
     ghc-options:
       -fpolymorphic-specialisation
@@ -222,6 +225,8 @@ test-suite test
 library vector-quicksort-cpp
   default-language:
     GHC2021
+  visibility:
+    private
   include-dirs:
     cbits
   cxx-sources:
