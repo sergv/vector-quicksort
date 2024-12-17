@@ -102,7 +102,7 @@ library
     , stm
     , vector
 
-library vector-quicksort-predefined
+library test-predefined-sorts
   import: ghc-options
 
   visibility:
@@ -215,14 +215,14 @@ test-suite test
     , tasty
     , tasty-quickcheck
     , vector
-    , vector-quicksort-predefined
+    , test-predefined-sorts
   ghc-options:
     -rtsopts
     -threaded
     "-with-rtsopts=-N -A16m -n1m -qg -qb"
     -main-is TestMain
 
-library vector-quicksort-cpp
+library test-foreign-sort
   default-language:
     GHC2021
   visibility:
@@ -279,8 +279,8 @@ benchmark bench
     , vector
     , vector-algorithms
     , vector-quicksort
-    , vector-quicksort-cpp
-    , vector-quicksort-predefined
+    , vector-quicksort:test-foreign-sort
+    , vector-quicksort:test-predefined-sorts
   ghc-options:
     -fno-spec-constr
     -rtsopts
